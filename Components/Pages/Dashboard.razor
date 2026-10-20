@@ -1,0 +1,79 @@
+@page "/dashboard"
+@layout EmptyLayout
+
+<PageTitle>LOADOUT | Operative Active Dashboard</PageTitle>
+
+<div class="min-h-screen bg-carbon text-boneWhite p-6 md:p-12 font-sans selection:bg-crimsonSignal selection:text-boneWhite flex flex-col justify-between">
+    <header class="flex justify-between items-center border-b border-hairline pb-4">
+        <div class="flex items-center gap-3">
+            <span class="w-3 h-3 bg-emeraldStatus inline-block animate-pulse"></span>
+            <span class="font-bold tracking-widest text-lg">LOADOUT</span>
+            <span class="text-xs tabular-mono text-zincMeta">OPERATIONAL DASHBOARD</span>
+        </div>
+        <div class="flex items-center gap-6">
+            <span class="text-xs tabular-mono text-zincMeta">ACTIVE STATUS: LOCKED</span>
+            <a href="/" class="text-xs tabular-mono tracking-wider text-crimsonSignal hover:underline">LOGOUT / DISCONNECT</a>
+        </div>
+    </header>
+
+    <main class="my-10 max-w-6xl w-full mx-auto">
+        <div class="flex items-center justify-between mb-8 pb-4 border-b border-hairline">
+            <div>
+                <span class="text-[10px] tabular-mono text-zincMeta uppercase tracking-widest block mb-1">OPERATIVE TELEMETRY</span>
+                <h1 class="text-3xl font-bold tracking-tight">Active Loadout Matrix</h1>
+            </div>
+            <div class="tabular-mono text-xs text-zincMeta border border-hairline px-3 py-1.5 bg-slateSurface">
+                STEAM SYNC: 184 GAMES FILTERED // 3 SLOTS DEPLOYED
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-slateSurface border border-hairline p-6 relative">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xs tabular-mono text-crimsonSignal font-bold">SLOT 01 // MAIN CAMPAIGN</span>
+                    <span class="text-[10px] tabular-mono px-2 py-0.5 bg-crimsonSignal/20 text-crimsonSignal border border-crimsonSignal">LOCKED</span>
+                </div>
+                <img src="/images/cover_campaign.jpg" alt="Campaign Game" class="w-full h-48 object-cover border border-hairline mb-4" />
+                <h2 class="text-lg font-bold">Obsidian Frontier</h2>
+                <div class="text-xs tabular-mono text-zincMeta mt-2 space-y-1">
+                    <div class="flex justify-between"><span>PLAYTIME:</span><span class="text-boneWhite">18.4 HRS</span></div>
+                    <div class="flex justify-between"><span>COMPLETION:</span><span class="text-boneWhite">42%</span></div>
+                    <div class="flex justify-between"><span>EST. REMAINING:</span><span class="text-boneWhite">24.0 HRS</span></div>
+                </div>
+            </div>
+
+            <div class="bg-slateSurface border border-hairline p-6 relative">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xs tabular-mono text-zincMeta font-bold">SLOT 02 // PALATE CLEANSER</span>
+                    <span class="text-[10px] tabular-mono px-2 py-0.5 bg-slateElevated text-zincMeta border border-hairline">READY</span>
+                </div>
+                <img src="/images/cover_cleanser.jpg" alt="Cleanser Game" class="w-full h-48 object-cover border border-hairline mb-4" />
+                <h2 class="text-lg font-bold">Osiris Protocol</h2>
+                <div class="text-xs tabular-mono text-zincMeta mt-2 space-y-1">
+                    <div class="flex justify-between"><span>LOOP DURATION:</span><span class="text-boneWhite">18 MIN</span></div>
+                    <div class="flex justify-between"><span>TOTAL RUNS:</span><span class="text-boneWhite">34 RUNS</span></div>
+                    <div class="flex justify-between"><span>SESSION GOAL:</span><span class="text-boneWhite">FLOOR 10 REACHED</span></div>
+                </div>
+            </div>
+
+            <div class="bg-slateSurface border border-hairline p-6 relative">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xs tabular-mono text-emeraldStatus font-bold">SLOT 03 // ENDLESS CO-OP</span>
+                    <span class="text-[10px] tabular-mono px-2 py-0.5 bg-emeraldStatus/20 text-emeraldStatus border border-emeraldStatus">STANDBY</span>
+                </div>
+                <img src="/images/cover_coop.jpg" alt="Co-op Game" class="w-full h-48 object-cover border border-hairline mb-4" />
+                <h2 class="text-lg font-bold">Strike Team: Obsidian</h2>
+                <div class="text-xs tabular-mono text-zincMeta mt-2 space-y-1">
+                    <div class="flex justify-between"><span>SQUAD STATUS:</span><span class="text-boneWhite">2 ONLINE</span></div>
+                    <div class="flex justify-between"><span>SESSION DIFFICULTY:</span><span class="text-boneWhite">TIER 4 EXTREME</span></div>
+                    <div class="flex justify-between"><span>WEEKLY OBJECTIVE:</span><span class="text-boneWhite">8/10 EXTRACTIONS</span></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="border-t border-hairline pt-4 flex justify-between text-[11px] tabular-mono text-zincMeta">
+        <span>LOADOUT TELEMETRY v2.4</span>
+        <a href="/" class="hover:text-boneWhite transition-colors">RETURN TO LANDING PAGE</a>
+    </footer>
+</div>
