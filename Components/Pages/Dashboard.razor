@@ -1,79 +1,847 @@
 @page "/dashboard"
+@rendermode InteractiveServer
 @layout EmptyLayout
+@using MidtermExam.Models
+@using MidtermExam.Services
+@using System.IO
+@inject ILoadoutService LoadoutService
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@implements IDisposable
 
-<PageTitle>LOADOUT | Operative Active Dashboard</PageTitle>
+<PageTitle>LOADOUT | Tonight</PageTitle>
 
-<div class="min-h-screen bg-carbon text-boneWhite p-6 md:p-12 font-sans selection:bg-crimsonSignal selection:text-boneWhite flex flex-col justify-between">
-    <header class="flex justify-between items-center border-b border-hairline pb-4">
-        <div class="flex items-center gap-3">
-            <span class="w-3 h-3 bg-emeraldStatus inline-block animate-pulse"></span>
-            <span class="font-bold tracking-widest text-lg">LOADOUT</span>
-            <span class="text-xs tabular-mono text-zincMeta">OPERATIONAL DASHBOARD</span>
-        </div>
-        <div class="flex items-center gap-6">
-            <span class="text-xs tabular-mono text-zincMeta">ACTIVE STATUS: LOCKED</span>
-            <a href="/" class="text-xs tabular-mono tracking-wider text-crimsonSignal hover:underline">LOGOUT / DISCONNECT</a>
+<HeadContent>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet" />
+</HeadContent>
+
+<div class="tonight-app" data-ui>
+    <header class="app-bar">
+        <div class="app-bar__inner">
+            <a class="app-brand" href="/dashboard" aria-label="LOADOUT Tonight home">
+                <span class="app-brand__mark" aria-hidden="true"></span>
+                <span>LOADOUT</span>
+            </a>
+
+            <nav class="app-location" aria-label="Current area">
+                <span aria-current="page">Tonight</span>
+                <span class="app-location__status">@ActiveSlotsCount of 3 active slots</span>
+            </nav>
+
+            <div class="app-account">
+                <button type="button" class="app-account__badge-btn" @onclick="OpenProfileModal" title="View Operator Profile & Badges">
+                    <span class="app-account__rank">LVL @CurrentUser.Level</span>
+                    <span>@CurrentUser.CallSign</span>
+                </button>
+                <a href="/" @onclick="HandleLogout">Log out</a>
+            </div>
         </div>
     </header>
 
-    <main class="my-10 max-w-6xl w-full mx-auto">
-        <div class="flex items-center justify-between mb-8 pb-4 border-b border-hairline">
+    <main class="app-canvas">
+        <header class="page-heading">
             <div>
-                <span class="text-[10px] tabular-mono text-zincMeta uppercase tracking-widest block mb-1">OPERATIVE TELEMETRY</span>
-                <h1 class="text-3xl font-bold tracking-tight">Active Loadout Matrix</h1>
+                <h1>Tonight</h1>
+                <p aria-live="polite">@Finding</p>
             </div>
-            <div class="tabular-mono text-xs text-zincMeta border border-hairline px-3 py-1.5 bg-slateSurface">
-                STEAM SYNC: 184 GAMES FILTERED // 3 SLOTS DEPLOYED
+            <div class="demo-state">
+                <strong>@CurrentUser.DisplayName</strong>
+                <span>@CurrentUser.CurrentXp / @CurrentUser.XpToNextLevel XP · @CurrentUser.ClearedCount Cleared · @CurrentUser.DroppedCount Dropped</span>
             </div>
+        </header>
+
+        <div class="decision-grid">
+            <section class="session-engine" aria-labelledby="session-engine-title">
+                <header class="panel-heading">
+                    <div>
+                        <h2 id="session-engine-title">What fits this session?</h2>
+                        <p>Set the evening you actually have—not the one you hoped for.</p>
+                    </div>
+                    <span class="session-engine__result-label">@CurrentRecommendation.Role</span>
+                </header>
+
+                <div class="session-controls">
+                    <div class="range-control">
+                        <div class="range-control__label">
+                            <label for="time-available">Time available</label>
+                            <output for="time-available">@TimeLabel</output>
+                        </div>
+                        <input id="time-available"
+                               type="range"
+                               min="30"
+                               max="180"
+                               step="15"
+                               @bind="TimeAvailable"
+                               @bind:event="oninput"
+                               aria-valuetext="@TimeLabel" />
+                        <div class="range-control__ends" aria-hidden="true">
+                            <span>30 min</span>
+                            <span>3 hours</span>
+                        </div>
+                    </div>
+
+                    <div class="range-control">
+                        <div class="range-control__label">
+                            <label for="brain-battery">Brain battery</label>
+                            <output for="brain-battery">@BrainBattery% · @BatteryLabel</output>
+                        </div>
+                        <input id="brain-battery"
+                               type="range"
+                               min="0"
+                               max="100"
+                               step="5"
+                               @bind="BrainBattery"
+                               @bind:event="oninput"
+                               aria-valuetext="@($"{BrainBattery} percent, {BatteryLabel}")" />
+                        <div class="range-control__ends" aria-hidden="true">
+                            <span>Spent</span>
+                            <span>Locked in</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="session-engine__roll-row">
+                    <button type="button"
+                            class="roll-roulette-btn @(isRolling ? "roll-roulette-btn--active" : "")"
+                            @onclick="RollRouletteAsync"
+                            aria-label="Roll Tonight's Game Roulette">
+                        <span aria-hidden="true">🎲</span>
+                        <span>@(isRolling ? "Scanning Mood & Loadout..." : "Roll Tonight's Roulette")</span>
+                    </button>
+                    @if (CurrentRecommendation.Game != null)
+                    {
+                        <span class="session-engine__result-label">@Math.Round(CurrentRecommendation.MatchScore)% Match</span>
+                    }
+                </div>
+
+                <div class="recommendation" aria-live="polite">
+                    @if (CurrentRecommendation.Game != null)
+                    {
+                        <img src="@CurrentRecommendation.Game.Cover" alt="@CurrentRecommendation.Game.AltText" />
+                        <div class="recommendation__copy">
+                            <span>Best fit right now</span>
+                            <h3>@CurrentRecommendation.Game.Title</h3>
+                            <p>@CurrentRecommendation.Reason</p>
+                        </div>
+                        <button type="button"
+                                class="recommendation__action"
+                                disabled="@IsRecommendationChosen"
+                                aria-pressed="@(IsRecommendationChosen ? "true" : "false")"
+                                @onclick="ChooseRecommendation">
+                            @(IsRecommendationChosen ? "Chosen for tonight" : "Choose for tonight")
+                        </button>
+                    }
+                    else
+                    {
+                        <div style="width: 94px; height: 92px; background: var(--ground); border: 1px dashed var(--control); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            🎯
+                        </div>
+                        <div class="recommendation__copy">
+                            <span>Loadout Standby</span>
+                            <h3>No Active Games</h3>
+                            <p>Equip a game into your 3 slots below to activate the session engine.</p>
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <aside class="slot-lock" aria-labelledby="slot-lock-title">
+                <div>
+                    <h2 id="slot-lock-title">The Slot Lock</h2>
+                    <p>There is no fourth active game. A slot opens only when you close the current commitment.</p>
+                </div>
+
+                <dl>
+                    <div>
+                        <dt>Cleared</dt>
+                        <dd>You finished the game and recorded the completion (+500 XP).</dd>
+                    </div>
+                    <div>
+                        <dt>Dropped</dt>
+                        <dd>You deliberately stopped and moved it out of rotation.</dd>
+                    </div>
+                </dl>
+
+                <p class="slot-lock__foot">The rule protects momentum; it does not punish changing your mind.</p>
+            </aside>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-slateSurface border border-hairline p-6 relative">
-                <div class="flex justify-between items-center mb-4">
-                    <span class="text-xs tabular-mono text-crimsonSignal font-bold">SLOT 01 // MAIN CAMPAIGN</span>
-                    <span class="text-[10px] tabular-mono px-2 py-0.5 bg-crimsonSignal/20 text-crimsonSignal border border-crimsonSignal">LOCKED</span>
+        <section class="active-loadout" aria-labelledby="active-loadout-title">
+            <header class="loadout-heading">
+                <div>
+                    <h2 id="active-loadout-title">Active loadout</h2>
+                    <p>Three different jobs, so there is always one sensible game to start.</p>
                 </div>
-                <img src="/images/cover_campaign.jpg" alt="Campaign Game" class="w-full h-48 object-cover border border-hairline mb-4" />
-                <h2 class="text-lg font-bold">Obsidian Frontier</h2>
-                <div class="text-xs tabular-mono text-zincMeta mt-2 space-y-1">
-                    <div class="flex justify-between"><span>PLAYTIME:</span><span class="text-boneWhite">18.4 HRS</span></div>
-                    <div class="flex justify-between"><span>COMPLETION:</span><span class="text-boneWhite">42%</span></div>
-                    <div class="flex justify-between"><span>EST. REMAINING:</span><span class="text-boneWhite">24.0 HRS</span></div>
+                <span>@ActiveSlotsCount of 3 slots equipped</span>
+            </header>
+
+            <div class="loadout-rack">
+                @for (var index = 0; index < 3; index++)
+                {
+                    var slotIndex = index;
+                    var slot = Slots.Count > slotIndex ? Slots[slotIndex] : null;
+
+                    if (slot != null)
+                    {
+                        <article class="@GetSlotClass(slotIndex)" @key="slot.Id">
+                            <div class="slot-card__visual">
+                                <img src="@slot.Cover" alt="@slot.AltText" />
+                                @if (slotIndex == RecommendedIndex)
+                                {
+                                    <span>Recommended now</span>
+                                }
+                                else if (ChosenSlotIndex == slotIndex)
+                                {
+                                    <span class="slot-card__chosen">Chosen tonight</span>
+                                }
+                            </div>
+
+                            <div class="slot-card__body">
+                                <div class="slot-card__title">
+                                    <span>@slot.Role</span>
+                                    <strong>Locked</strong>
+                                </div>
+                                <h3>@slot.Title</h3>
+                                <p>@slot.Purpose</p>
+
+                                <dl>
+                                    <div>
+                                        <dt>@slot.PrimaryLabel</dt>
+                                        <dd>@slot.PrimaryValue</dd>
+                                    </div>
+                                    <div>
+                                        <dt>@slot.SecondaryLabel</dt>
+                                        <dd>@slot.SecondaryValue</dd>
+                                    </div>
+                                </dl>
+
+                                <div class="slot-card__actions">
+                                    <button type="button"
+                                            class="slot-action-btn slot-action-btn--clear"
+                                            @onclick="() => OpenClearModal(slotIndex)"
+                                            title="Mark as Cleared (+500 XP)">
+                                        <span aria-hidden="true">✓</span> Cleared
+                                    </button>
+                                    <button type="button"
+                                            class="slot-action-btn slot-action-btn--drop"
+                                            @onclick="() => OpenDropModal(slotIndex)"
+                                            title="Retire to Graveyard">
+                                        <span aria-hidden="true">✕</span> Drop
+                                    </button>
+                                    <button type="button"
+                                            class="slot-action-btn slot-action-btn--edit"
+                                            @onclick="() => OpenProgressModal(slotIndex)"
+                                            title="Update metrics">
+                                        <span aria-hidden="true">✎</span> Progress
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                    else
+                    {
+                        <article class="slot-card slot-card--empty" @onclick="() => OpenEquipModal(slotIndex)">
+                            <div class="slot-card__empty-inner">
+                                <span class="slot-card__empty-role">@(((SlotType)(slotIndex + 1)).ToDisplayName())</span>
+                                <div class="slot-card__empty-icon" aria-hidden="true">+</div>
+                                <strong>Equip Game</strong>
+                                <p>Slot unlocked. Select or upload a game to deploy.</p>
+                                <span class="slot-card__empty-cta">Deploy Weapon →</span>
+                            </div>
+                        </article>
+                    }
+                }
+            </div>
+        </section>
+
+        <!-- Archive & Graveyard History Section -->
+        <section class="archive-section" aria-label="Archive and Graveyard">
+            <div class="archive-toggle-bar">
+                <div>
+                    <h3>Service Record</h3>
+                    <span>@HallOfFame.Count Cleared in Hall of Fame · @Graveyard.Count Retired in Graveyard</span>
                 </div>
+                <button type="button" class="modal-btn modal-btn--secondary" @onclick="ToggleArchiveView">
+                    @(showArchive ? "Hide Records" : "View Hall of Fame & Graveyard")
+                </button>
             </div>
 
-            <div class="bg-slateSurface border border-hairline p-6 relative">
-                <div class="flex justify-between items-center mb-4">
-                    <span class="text-xs tabular-mono text-zincMeta font-bold">SLOT 02 // PALATE CLEANSER</span>
-                    <span class="text-[10px] tabular-mono px-2 py-0.5 bg-slateElevated text-zincMeta border border-hairline">READY</span>
-                </div>
-                <img src="/images/cover_cleanser.jpg" alt="Cleanser Game" class="w-full h-48 object-cover border border-hairline mb-4" />
-                <h2 class="text-lg font-bold">Osiris Protocol</h2>
-                <div class="text-xs tabular-mono text-zincMeta mt-2 space-y-1">
-                    <div class="flex justify-between"><span>LOOP DURATION:</span><span class="text-boneWhite">18 MIN</span></div>
-                    <div class="flex justify-between"><span>TOTAL RUNS:</span><span class="text-boneWhite">34 RUNS</span></div>
-                    <div class="flex justify-between"><span>SESSION GOAL:</span><span class="text-boneWhite">FLOOR 10 REACHED</span></div>
-                </div>
-            </div>
+            @if (showArchive)
+            {
+                <div class="archive-grid">
+                    @foreach (var cleared in HallOfFame)
+                    {
+                        <div class="archive-card" @key="cleared.Id">
+                            <img src="@cleared.Cover" alt="@cleared.AltText" />
+                            <div class="archive-card__content">
+                                <span class="archive-card__status archive-card__status--cleared">✓ Cleared (+500 XP)</span>
+                                <h4>@cleared.Title</h4>
+                                <p>@cleared.Role · @cleared.SecondaryValue</p>
+                                @if (!string.IsNullOrWhiteSpace(cleared.ClearedNotes))
+                                {
+                                    <p style="color: #fafafa; font-style: italic;">"@cleared.ClearedNotes"</p>
+                                }
+                            </div>
+                        </div>
+                    }
 
-            <div class="bg-slateSurface border border-hairline p-6 relative">
-                <div class="flex justify-between items-center mb-4">
-                    <span class="text-xs tabular-mono text-emeraldStatus font-bold">SLOT 03 // ENDLESS CO-OP</span>
-                    <span class="text-[10px] tabular-mono px-2 py-0.5 bg-emeraldStatus/20 text-emeraldStatus border border-emeraldStatus">STANDBY</span>
+                    @foreach (var dropped in Graveyard)
+                    {
+                        <div class="archive-card" @key="dropped.Id">
+                            <img src="@dropped.Cover" alt="@dropped.AltText" />
+                            <div class="archive-card__content">
+                                <span class="archive-card__status archive-card__status--dropped">✕ Retired to Graveyard</span>
+                                <h4>@dropped.Title</h4>
+                                <p>@dropped.Role · @dropped.SecondaryValue</p>
+                                @if (!string.IsNullOrWhiteSpace(dropped.DroppedReason))
+                                {
+                                    <p style="color: var(--muted); font-style: italic;">Reason: @dropped.DroppedReason</p>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (!HallOfFame.Any() && !Graveyard.Any())
+                    {
+                        <p style="grid-column: 1/-1; padding: 18px; color: var(--muted); text-align: center;">
+                            No archived titles yet. Clear or drop an active slot to build your service history.
+                        </p>
+                    }
                 </div>
-                <img src="/images/cover_coop.jpg" alt="Co-op Game" class="w-full h-48 object-cover border border-hairline mb-4" />
-                <h2 class="text-lg font-bold">Strike Team: Obsidian</h2>
-                <div class="text-xs tabular-mono text-zincMeta mt-2 space-y-1">
-                    <div class="flex justify-between"><span>SQUAD STATUS:</span><span class="text-boneWhite">2 ONLINE</span></div>
-                    <div class="flex justify-between"><span>SESSION DIFFICULTY:</span><span class="text-boneWhite">TIER 4 EXTREME</span></div>
-                    <div class="flex justify-between"><span>WEEKLY OBJECTIVE:</span><span class="text-boneWhite">8/10 EXTRACTIONS</span></div>
-                </div>
-            </div>
-        </div>
+            }
+        </section>
     </main>
-
-    <footer class="border-t border-hairline pt-4 flex justify-between text-[11px] tabular-mono text-zincMeta">
-        <span>LOADOUT TELEMETRY v2.4</span>
-        <a href="/" class="hover:text-boneWhite transition-colors">RETURN TO LANDING PAGE</a>
-    </footer>
 </div>
+
+<!-- =========================================================================
+     TACTICAL MODALS (Equip, Clear, Drop, Progress, Profile)
+     ========================================================================= -->
+
+@if (activeModal == ModalType.Equip)
+{
+    <div class="loadout-modal-backdrop" @onclick="CloseModal">
+        <div class="loadout-modal" @onclick:stopPropagation="true">
+            <div class="loadout-modal__header">
+                <h3>Equip Slot @(selectedSlotIndex + 1): @(((SlotType)(selectedSlotIndex + 1)).ToDisplayName())</h3>
+                <button type="button" class="loadout-modal__close" @onclick="CloseModal">✕</button>
+            </div>
+            <div class="loadout-modal__body">
+                @if (!string.IsNullOrEmpty(modalError))
+                {
+                    <div style="background: rgba(225, 29, 72, 0.15); border: 1px solid #e11d48; color: #fca5a5; padding: 10px 14px; font-size: 13px;">
+                        @modalError
+                    </div>
+                }
+
+                <div class="modal-field">
+                    <label for="equip-title">Game Title</label>
+                    <input id="equip-title" type="text" @bind="newGameTitle" placeholder="e.g., Cyberpunk 2077 or Balatro" />
+                </div>
+
+                <div class="modal-field">
+                    <label>Quick Presets</label>
+                    <div class="modal-presets">
+                        <button type="button" class="preset-chip" @onclick='() => ApplyPreset("Elden Ring", "/images/cover_campaign.jpg", "Focused, atmospheric open world RPG.", 120, 80)'>Elden Ring</button>
+                        <button type="button" class="preset-chip" @onclick='() => ApplyPreset("Cyberpunk 2077", "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&q=80", "High-intensity immersive night city campaign.", 90, 70)'>Cyberpunk 2077</button>
+                        <button type="button" class="preset-chip" @onclick='() => ApplyPreset("Black Myth: Wukong", "/images/cover_campaign.jpg", "Demanding action-RPG boss progression.", 90, 85)'>Black Myth</button>
+                        <button type="button" class="preset-chip" @onclick='() => ApplyPreset("Balatro", "/images/cover_cleanser.jpg", "Fast roguelike poker deckbuilder runs.", 30, 20)'>Balatro</button>
+                        <button type="button" class="preset-chip" @onclick='() => ApplyPreset("Hades", "/images/cover_cleanser.jpg", "Quick escape attempts between tasks.", 35, 30)'>Hades</button>
+                        <button type="button" class="preset-chip" @onclick='() => ApplyPreset("Valorant", "/images/cover_coop.jpg", "Competitive tactical squad shooter.", 45, 60)'>Valorant</button>
+                        <button type="button" class="preset-chip" @onclick='() => ApplyPreset("Helldivers 2", "/images/cover_coop.jpg", "Galactic co-op defense with friends.", 60, 50)'>Helldivers 2</button>
+                    </div>
+                </div>
+
+                <div class="modal-field">
+                    <label>Game Cover Image (Upload File or Enter URL)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" @bind="newGameCover" placeholder="Paste image URL (https://...)" style="flex: 1;" />
+                    </div>
+                    <div style="margin-top: 6px;">
+                        <label style="font-size: 11px; color: var(--faint);">Or upload custom image from PC:</label>
+                        <InputFile OnChange="HandleFileSelected" accept="image/*" style="font-size: 12px; margin-top: 2px;" />
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(newGameCover))
+                    {
+                        <div class="image-preview-box">
+                            <img src="@newGameCover" alt="Cover preview" />
+                            <div class="image-preview-info">
+                                <strong>Image Ready</strong>
+                                <span>Attached to slot loadout.</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-field">
+                    <label for="equip-purpose">Role & Purpose Description</label>
+                    <input id="equip-purpose" type="text" @bind="newGamePurpose" placeholder="e.g., Story chapter focus or 15-minute quick break" />
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="modal-field">
+                        <label for="equip-time">Target Session (Minutes)</label>
+                        <input id="equip-time" type="number" step="15" min="15" max="240" @bind="newGameMinutes" />
+                    </div>
+                    <div class="modal-field">
+                        <label for="equip-battery">Min Brain Battery (%)</label>
+                        <input id="equip-battery" type="number" step="5" min="0" max="100" @bind="newGameBattery" />
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="modal-field">
+                        <label for="equip-metric1">Initial Progress Metric</label>
+                        <input id="equip-metric1" type="text" @bind="newGameMetric1" placeholder="e.g. 0% complete or Level 1" />
+                    </div>
+                    <div class="modal-field">
+                        <label for="equip-metric2">Time Logged Metric</label>
+                        <input id="equip-metric2" type="text" @bind="newGameMetric2" placeholder="e.g. 0 hours logged" />
+                    </div>
+                </div>
+            </div>
+            <div class="loadout-modal__footer">
+                <button type="button" class="modal-btn modal-btn--secondary" @onclick="CloseModal">Cancel</button>
+                <button type="button" class="modal-btn modal-btn--accent" @onclick="CommitEquipGame">Lock into Loadout</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (activeModal == ModalType.Clear)
+{
+    var game = SelectedSlotGame;
+    <div class="loadout-modal-backdrop" @onclick="CloseModal">
+        <div class="loadout-modal" @onclick:stopPropagation="true">
+            <div class="loadout-modal__header">
+                <h3>Record Victory: Cleared Game</h3>
+                <button type="button" class="loadout-modal__close" @onclick="CloseModal">✕</button>
+            </div>
+            <div class="loadout-modal__body">
+                <div style="display: flex; gap: 16px; align-items: center; background: var(--raised); padding: 14px; border: 1px solid #10b981;">
+                    @if (game != null)
+                    {
+                        <img src="@game.Cover" alt="@game.AltText" style="width: 50px; height: 60px; object-fit: cover;" />
+                        <div>
+                            <strong style="color: #34d399; font-size: 15px;">✓ @game.Title Cleared!</strong>
+                            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Reward: <span style="color: #fafafa; font-weight: 700;">+500 Operator XP</span> and completion record.</p>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-field">
+                    <label for="clear-notes">Debrief / Victory Notes (Optional)</label>
+                    <textarea id="clear-notes" @bind="clearNotes" placeholder="Write any reflections, favorite moment, or completion stats..."></textarea>
+                </div>
+
+                <p style="font-size: 12px; color: var(--muted); margin: 0;">
+                    Clearing unlocks this slot per <strong>The Slot Lock</strong>, allowing you to equip a new game into your active 3-slot loadout.
+                </p>
+            </div>
+            <div class="loadout-modal__footer">
+                <button type="button" class="modal-btn modal-btn--secondary" @onclick="CloseModal">Cancel</button>
+                <button type="button" class="modal-btn modal-btn--primary" @onclick="CommitClearGame">Claim +500 XP & Open Slot</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (activeModal == ModalType.Drop)
+{
+    var game = SelectedSlotGame;
+    <div class="loadout-modal-backdrop" @onclick="CloseModal">
+        <div class="loadout-modal" @onclick:stopPropagation="true">
+            <div class="loadout-modal__header">
+                <h3>Drop Game · Retire to Graveyard</h3>
+                <button type="button" class="loadout-modal__close" @onclick="CloseModal">✕</button>
+            </div>
+            <div class="loadout-modal__body">
+                <div style="display: flex; gap: 16px; align-items: center; background: var(--raised); padding: 14px; border: 1px solid var(--accent);">
+                    @if (game != null)
+                    {
+                        <img src="@game.Cover" alt="@game.AltText" style="width: 50px; height: 60px; object-fit: cover;" />
+                        <div>
+                            <strong style="color: var(--accent); font-size: 15px;">Retire: @game.Title</strong>
+                            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Dropping unburdens your backlog and frees this slot immediately.</p>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-field">
+                    <label for="drop-reason">Reason for Dropping</label>
+                    <input id="drop-reason" type="text" @bind="dropReason" placeholder="e.g. Lost interest, pacing issues, or moving on" />
+                </div>
+
+                <p style="font-size: 12px; color: var(--muted); margin: 0;">
+                    Dropping is a tactical decision to prevent backlog paralysis. The game will be saved in your Graveyard service archive.
+                </p>
+            </div>
+            <div class="loadout-modal__footer">
+                <button type="button" class="modal-btn modal-btn--secondary" @onclick="CloseModal">Cancel</button>
+                <button type="button" class="modal-btn modal-btn--accent" @onclick="CommitDropGame">Retire Game & Free Slot</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (activeModal == ModalType.Progress)
+{
+    var game = SelectedSlotGame;
+    <div class="loadout-modal-backdrop" @onclick="CloseModal">
+        <div class="loadout-modal" @onclick:stopPropagation="true">
+            <div class="loadout-modal__header">
+                <h3>Update Progress: @(game?.Title ?? "Game")</h3>
+                <button type="button" class="loadout-modal__close" @onclick="CloseModal">✕</button>
+            </div>
+            <div class="loadout-modal__body">
+                <div class="modal-field">
+                    <label for="prog-metric1">@(game?.PrimaryLabel ?? "Progress")</label>
+                    <input id="prog-metric1" type="text" @bind="updateMetric1" />
+                </div>
+
+                <div class="modal-field">
+                    <label for="prog-metric2">@(game?.SecondaryLabel ?? "Time Logged")</label>
+                    <input id="prog-metric2" type="text" @bind="updateMetric2" />
+                </div>
+            </div>
+            <div class="loadout-modal__footer">
+                <button type="button" class="modal-btn modal-btn--secondary" @onclick="CloseModal">Cancel</button>
+                <button type="button" class="modal-btn modal-btn--primary" @onclick="CommitUpdateProgress">Save Progress</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (activeModal == ModalType.Profile)
+{
+    <div class="loadout-modal-backdrop" @onclick="CloseModal">
+        <div class="loadout-modal" @onclick:stopPropagation="true">
+            <div class="loadout-modal__header">
+                <h3>Operator Dossier: @CurrentUser.CallSign</h3>
+                <button type="button" class="loadout-modal__close" @onclick="CloseModal">✕</button>
+            </div>
+            <div class="loadout-modal__body">
+                <div style="background: var(--raised); padding: 16px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <span style="font-weight: 700; font-size: 16px;">@CurrentUser.DisplayName</span>
+                        <span style="color: var(--accent); font-weight: 700;">LVL @CurrentUser.Level Specialist</span>
+                    </div>
+                    <div style="height: 6px; background: var(--ground); border-radius: 3px; overflow: hidden;">
+                        <div style="width: @CurrentUser.XpPercentage%; height: 100%; background: var(--accent); transition: width 300ms ease;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--muted);">
+                        <span>@CurrentUser.CurrentXp XP earned</span>
+                        <span>Next Rank at @CurrentUser.XpToNextLevel XP</span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div style="background: var(--raised); padding: 12px; border: 1px solid var(--border); text-align: center;">
+                        <strong style="font-size: 20px; color: #10b981;">@CurrentUser.ClearedCount</strong>
+                        <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">Titles Cleared</p>
+                    </div>
+                    <div style="background: var(--raised); padding: 12px; border: 1px solid var(--border); text-align: center;">
+                        <strong style="font-size: 20px; color: var(--accent);">@CurrentUser.DroppedCount</strong>
+                        <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">Titles Dropped</p>
+                    </div>
+                </div>
+
+                <div>
+                    <strong style="font-size: 13px; color: var(--text);">Unlocked Badges (@CurrentUser.Badges.Count)</strong>
+                    <div style="display: grid; gap: 8px; margin-top: 8px;">
+                        @foreach (var badge in CurrentUser.Badges)
+                        {
+                            <div style="display: flex; align-items: center; gap: 12px; background: var(--raised); padding: 10px; border: 1px solid var(--border);" @key="badge.Id">
+                                <span style="font-size: 22px;">@badge.Icon</span>
+                                <div>
+                                    <strong style="font-size: 13px;">@badge.Name</strong>
+                                    <p style="font-size: 11px; color: var(--muted); margin-top: 2px;">@badge.Description</p>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!CurrentUser.Badges.Any())
+                        {
+                            <p style="font-size: 12px; color: var(--muted); margin: 8px 0;">No badges unlocked yet. Clear games to earn milestone badges!</p>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="loadout-modal__footer">
+                <button type="button" class="modal-btn modal-btn--primary" @onclick="CloseModal">Close Dossier</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private enum ModalType { None, Equip, Clear, Drop, Progress, Profile }
+    private ModalType activeModal = ModalType.None;
+    private int selectedSlotIndex = 0;
+    private bool isRolling = false;
+    private bool showArchive = false;
+
+    // Equip form state
+    private string newGameTitle = string.Empty;
+    private string newGameCover = "/images/cover_campaign.jpg";
+    private string newGamePurpose = string.Empty;
+    private int newGameMinutes = 60;
+    private int newGameBattery = 50;
+    private string newGameMetric1 = "0% complete";
+    private string newGameMetric2 = "0 hours";
+    private string? modalError;
+
+    // Clear form state
+    private string? clearNotes;
+
+    // Drop form state
+    private string? dropReason;
+
+    // Progress form state
+    private string updateMetric1 = string.Empty;
+    private string updateMetric2 = string.Empty;
+
+    private UserProfile CurrentUser => AuthService.CurrentUser;
+    private IReadOnlyList<GameItem?> Slots => LoadoutService.Slots;
+    private IReadOnlyList<GameItem> HallOfFame => LoadoutService.HallOfFame;
+    private IReadOnlyList<GameItem> Graveyard => LoadoutService.Graveyard;
+
+    private int ActiveSlotsCount => Slots.Count(s => s != null);
+    private int? ChosenSlotIndex => LoadoutService.ChosenSlotIndex;
+
+    private int TimeAvailable
+    {
+        get => LoadoutService.TimeAvailable;
+        set => LoadoutService.TimeAvailable = value;
+    }
+
+    private int BrainBattery
+    {
+        get => LoadoutService.BrainBattery;
+        set => LoadoutService.BrainBattery = value;
+    }
+
+    private RouletteResult CurrentRecommendation => LoadoutService.EvaluateTonight(TimeAvailable, BrainBattery);
+    private int RecommendedIndex => CurrentRecommendation.RecommendedIndex;
+    private bool IsRecommendationChosen => ChosenSlotIndex == RecommendedIndex;
+
+    private GameItem? SelectedSlotGame =>
+        selectedSlotIndex >= 0 && selectedSlotIndex < Slots.Count ? Slots[selectedSlotIndex] : null;
+
+    private string TimeLabel
+    {
+        get
+        {
+            if (TimeAvailable < 60) return $"{TimeAvailable} minutes";
+            if (TimeAvailable == 60) return "1 hour";
+            return TimeAvailable % 60 == 0
+                ? $"{TimeAvailable / 60} hours"
+                : $"{TimeAvailable / 60} hr {TimeAvailable % 60} min";
+        }
+    }
+
+    private string BatteryLabel
+    {
+        get
+        {
+            if (BrainBattery <= 20) return "spent";
+            if (BrainBattery <= 40) return "low";
+            if (BrainBattery <= 65) return "steady";
+            return BrainBattery <= 85 ? "focused" : "locked in";
+        }
+    }
+
+    private string Finding => CurrentRecommendation.Game != null
+        ? $"{TimeLabel} and {BatteryLabel} energy: play {CurrentRecommendation.Game.Title}."
+        : "Deploy games into your slots to receive tactical session recommendations.";
+
+    protected override void OnInitialized()
+    {
+        LoadoutService.OnLoadoutChanged += HandleServiceChanged;
+        AuthService.OnAuthStateChanged += HandleServiceChanged;
+    }
+
+    private void HandleServiceChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        LoadoutService.OnLoadoutChanged -= HandleServiceChanged;
+        AuthService.OnAuthStateChanged -= HandleServiceChanged;
+    }
+
+    private async Task RollRouletteAsync()
+    {
+        isRolling = true;
+        StateHasChanged();
+        await Task.Delay(400);
+        isRolling = false;
+        LoadoutService.ChooseRecommendation(RecommendedIndex);
+        StateHasChanged();
+    }
+
+    private void ChooseRecommendation()
+    {
+        LoadoutService.ChooseRecommendation(RecommendedIndex);
+    }
+
+    private string GetSlotClass(int index)
+    {
+        var classes = "slot-card";
+        if (index == RecommendedIndex)
+        {
+            classes += " slot-card--recommended";
+        }
+        if (ChosenSlotIndex == index)
+        {
+            classes += " slot-card--chosen";
+        }
+        return classes;
+    }
+
+    private void OpenProfileModal() => activeModal = ModalType.Profile;
+    private void CloseModal()
+    {
+        activeModal = ModalType.None;
+        modalError = null;
+    }
+
+    private void ToggleArchiveView() => showArchive = !showArchive;
+
+    private void OpenEquipModal(int slotIndex)
+    {
+        selectedSlotIndex = slotIndex;
+        modalError = null;
+        var role = (SlotType)(slotIndex + 1);
+
+        newGameTitle = string.Empty;
+        newGameCover = slotIndex switch
+        {
+            0 => "/images/cover_campaign.jpg",
+            1 => "/images/cover_cleanser.jpg",
+            _ => "/images/cover_coop.jpg"
+        };
+        newGamePurpose = role.ToSubtitle();
+        newGameMinutes = slotIndex switch { 0 => 90, 1 => 30, _ => 60 };
+        newGameBattery = slotIndex switch { 0 => 70, 1 => 25, _ => 50 };
+        newGameMetric1 = role.DefaultPrimaryLabel() + ": 0% complete";
+        newGameMetric2 = role.DefaultSecondaryLabel() + ": 0 hours";
+
+        activeModal = ModalType.Equip;
+    }
+
+    private void ApplyPreset(string title, string cover, string purpose, int minutes, int battery)
+    {
+        newGameTitle = title;
+        newGameCover = cover;
+        newGamePurpose = purpose;
+        newGameMinutes = minutes;
+        newGameBattery = battery;
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            try
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                newGameCover = $"data:{file.ContentType};base64,{base64}";
+            }
+            catch (Exception ex)
+            {
+                modalError = $"Error reading image: {ex.Message}";
+            }
+        }
+    }
+
+    private void CommitEquipGame()
+    {
+        if (string.IsNullOrWhiteSpace(newGameTitle))
+        {
+            modalError = "Please enter a game title.";
+            return;
+        }
+
+        var slotType = (SlotType)(selectedSlotIndex + 1);
+        var game = new GameItem(
+            slotType,
+            newGameTitle.Trim(),
+            string.IsNullOrWhiteSpace(newGameCover) ? "/images/cover_campaign.jpg" : newGameCover,
+            $"{newGameTitle} cover",
+            newGamePurpose,
+            slotType.DefaultPrimaryLabel(),
+            newGameMetric1,
+            slotType.DefaultSecondaryLabel(),
+            newGameMetric2,
+            newGameMinutes,
+            newGameBattery);
+
+        if (LoadoutService.EquipGame(selectedSlotIndex, game, out var error))
+        {
+            CloseModal();
+        }
+        else
+        {
+            modalError = error;
+        }
+    }
+
+    private void OpenClearModal(int slotIndex)
+    {
+        selectedSlotIndex = slotIndex;
+        clearNotes = string.Empty;
+        activeModal = ModalType.Clear;
+    }
+
+    private void CommitClearGame()
+    {
+        LoadoutService.ClearSlot(selectedSlotIndex, clearNotes, out _, out _);
+        CloseModal();
+    }
+
+    private void OpenDropModal(int slotIndex)
+    {
+        selectedSlotIndex = slotIndex;
+        dropReason = string.Empty;
+        activeModal = ModalType.Drop;
+    }
+
+    private void CommitDropGame()
+    {
+        LoadoutService.DropSlot(selectedSlotIndex, dropReason);
+        CloseModal();
+    }
+
+    private void OpenProgressModal(int slotIndex)
+    {
+        selectedSlotIndex = slotIndex;
+        var game = SelectedSlotGame;
+        if (game != null)
+        {
+            updateMetric1 = game.PrimaryValue;
+            updateMetric2 = game.SecondaryValue;
+            activeModal = ModalType.Progress;
+        }
+    }
+
+    private void CommitUpdateProgress()
+    {
+        LoadoutService.UpdateProgress(selectedSlotIndex, updateMetric1, updateMetric2);
+        CloseModal();
+    }
+
+    private void HandleLogout()
+    {
+        AuthService.Logout();
+        Navigation.NavigateTo("/");
+    }
+}

@@ -1,0 +1,97 @@
+<div class="auth-shell">
+    <header class="auth-shell__header">
+        <a class="auth-shell__brand" href="/" aria-label="LOADOUT landing page">
+            <span class="auth-shell__brand-mark" aria-hidden="true"></span>
+            <span>LOADOUT</span>
+        </a>
+
+        <p class="auth-shell__alternate">
+            @AlternatePrompt
+            <a href="@AlternateHref">@AlternateLabel</a>
+        </p>
+    </header>
+
+    <main class="auth-shell__main">
+        <section class="auth-shell__form-panel" aria-labelledby="auth-title">
+            <div class="auth-shell__form-wrap">
+                <a class="auth-shell__back" href="/">Back to overview</a>
+                <div class="auth-shell__intro">
+                    <h1 id="auth-title">@Title</h1>
+                    <p>@Description</p>
+                </div>
+
+                @ChildContent
+
+                <p class="auth-shell__prototype-note">
+                    Prototype access only. Account data is not stored yet.
+                </p>
+            </div>
+        </section>
+
+        <section class="auth-shell__product" aria-labelledby="auth-product-title">
+            <div class="auth-shell__product-wrap">
+                <div class="auth-shell__product-heading">
+                    <h2 id="auth-product-title">Three slots. One game tonight.</h2>
+                    <p>Your whole library stays available, but only three games compete for your attention.</p>
+                </div>
+
+                <div class="auth-loadout" aria-label="Example three-slot loadout">
+                    <article class="auth-slot">
+                        <img src="/images/cover_campaign.jpg" alt="Obsidian Frontier campaign cover" />
+                        <div class="auth-slot__copy">
+                            <span>Primary campaign</span>
+                            <strong>Obsidian Frontier</strong>
+                            <small>For focused, longer sessions</small>
+                        </div>
+                        <b>Locked</b>
+                    </article>
+
+                    <article class="auth-slot auth-slot--recommended">
+                        <img src="/images/cover_cleanser.jpg" alt="Osiris Protocol game cover" />
+                        <div class="auth-slot__copy">
+                            <span>Palate cleanser</span>
+                            <strong>Osiris Protocol</strong>
+                            <small>Tonight's low-energy pick</small>
+                        </div>
+                        <b>Play</b>
+                    </article>
+
+                    <article class="auth-slot">
+                        <img src="/images/cover_coop.jpg" alt="Strike Team Obsidian game cover" />
+                        <div class="auth-slot__copy">
+                            <span>Endless or squad</span>
+                            <strong>Strike Team: Obsidian</strong>
+                            <small>Ready when the group is online</small>
+                        </div>
+                        <b>Ready</b>
+                    </article>
+                </div>
+
+                <div class="auth-shell__rule">
+                    <strong>The Slot Lock</strong>
+                    <p>A new game enters only after the current one is cleared or deliberately dropped.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Description { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string AlternatePrompt { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string AlternateHref { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string AlternateLabel { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public RenderFragment? ChildContent { get; set; }
+}

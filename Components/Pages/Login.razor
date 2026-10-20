@@ -1,47 +1,76 @@
 @page "/login"
+@rendermode InteractiveServer
 @layout EmptyLayout
+@using System.ComponentModel.DataAnnotations
+@using MidtermExam.Models
+@using MidtermExam.Services
+@inject NavigationManager Navigation
+@inject IAuthService AuthService
 
-<PageTitle>LOADOUT | Operative Login</PageTitle>
+<PageTitle>LOADOUT | Log in</PageTitle>
 
-<div class="min-h-screen bg-carbon text-boneWhite flex flex-col justify-between p-6 md:p-12 font-sans selection:bg-crimsonSignal selection:text-boneWhite">
-    <header class="flex justify-between items-center border-b border-hairline pb-4">
-        <a href="/" class="flex items-center gap-3 group">
-            <span class="w-3 h-3 bg-crimsonSignal inline-block group-hover:scale-125 transition-transform"></span>
-            <span class="font-bold tracking-widest text-lg">LOADOUT</span>
-            <span class="text-xs tabular-mono text-zincMeta">AUTH_CHECK</span>
-        </a>
-        <a href="/register" class="text-xs tabular-mono tracking-wider text-zincMeta hover:text-boneWhite transition-colors">NEED ENLISTMENT? REGISTER</a>
-    </header>
+<HeadContent>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet" />
+</HeadContent>
 
-    <main class="max-w-md w-full mx-auto my-12 bg-slateSurface border border-hairline p-8 relative">
-        <div class="absolute -top-3 left-4 bg-carbon px-2 text-[10px] tabular-mono text-emeraldStatus tracking-widest uppercase border border-hairline">
-            TERMINAL ACCESS
+<AuthShell Title="Resume your loadout"
+           Description="Return to your three active games and get one clear recommendation for tonight."
+           AlternatePrompt="New to LOADOUT?"
+           AlternateHref="/register"
+           AlternateLabel="Create an account">
+    <EditForm Model="loginModel" OnValidSubmit="HandleLogin" FormName="login" class="auth-form">
+        <DataAnnotationsValidator />
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div style="background: rgba(225, 29, 72, 0.15); border: 1px solid #e11d48; color: #fca5a5; padding: 10px 14px; font-size: 13px; margin-bottom: 16px;">
+                @errorMessage
+            </div>
+        }
+
+        <div class="auth-form__field">
+            <label for="login-identity">Email or call-sign</label>
+            <InputText id="login-identity"
+                       @bind-Value="loginModel.Identity"
+                       autocomplete="username"
+                       placeholder="player@example.com or GHOST-01" />
+            <ValidationMessage For="@(() => loginModel.Identity)" />
         </div>
 
-        <h1 class="text-2xl font-bold tracking-tight mb-2">Authenticate Operative</h1>
-        <p class="text-xs text-zincMeta mb-6">Enter your credentials to restore your active 3-slot telemetry.</p>
+        <div class="auth-form__field">
+            <label for="login-password">Password</label>
+            <InputText id="login-password"
+                       type="password"
+                       @bind-Value="loginModel.Password"
+                       autocomplete="current-password"
+                       placeholder="Enter your password" />
+            <ValidationMessage For="@(() => loginModel.Password)" />
+        </div>
 
-        <form class="space-y-4" onsubmit="event.preventDefault(); window.location.href='/dashboard';">
-            <div>
-                <label class="block text-[10px] tabular-mono text-zincMeta uppercase mb-1 tracking-wider">Call-Sign or Email</label>
-                <input type="text" required placeholder="VANGUARD_01" class="w-full bg-slateElevated border border-hairline px-3 py-2 text-sm text-boneWhite focus:outline-none focus:border-crimsonSignal font-mono" />
-            </div>
-            <div>
-                <label class="block text-[10px] tabular-mono text-zincMeta uppercase mb-1 tracking-wider">Security Key</label>
-                <input type="password" required placeholder="••••••••••••" class="w-full bg-slateElevated border border-hairline px-3 py-2 text-sm text-boneWhite focus:outline-none focus:border-crimsonSignal font-mono" />
-            </div>
+        <button class="auth-form__submit" type="submit">
+            <span>Enter LOADOUT</span>
+            <span aria-hidden="true">Continue →</span>
+        </button>
+    </EditForm>
+</AuthShell>
 
-            <div class="pt-4">
-                <button type="submit" class="w-full bg-boneWhite text-carbon font-bold text-xs uppercase tracking-widest py-3 hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2">
-                    <span>AUTHENTICATE</span>
-                    <span class="tabular-mono text-[10px]">[ENTER]</span>
-                </button>
-            </div>
-        </form>
-    </main>
+@code {
+    private readonly LoginModel loginModel = new();
+    private string? errorMessage;
 
-    <footer class="border-t border-hairline pt-4 flex justify-between text-[11px] tabular-mono text-zincMeta">
-        <span>SESSION PROTOCOL: TLS 1.3 SECURE</span>
-        <a href="/" class="hover:text-boneWhite transition-colors">RETURN TO SYSTEM TERMINAL</a>
-    </footer>
-</div>
+    private void HandleLogin()
+    {
+        errorMessage = null;
+        if (AuthService.Login(loginModel.Identity, loginModel.Password, out var error))
+        {
+            Navigation.NavigateTo("/dashboard");
+        }
+        else
+        {
+            errorMessage = error;
+        }
+    }
+}
+

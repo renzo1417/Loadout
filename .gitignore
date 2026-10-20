@@ -3,24 +3,39 @@
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+out/
+dist/
 
-# Visual Studio and IDE files
+# Visual Studio / Visual Studio Code / Rider
 .vs/
 .vscode/
+.idea/
 *.user
 *.suo
+*.userprefs
 *.userosscache
 *.sln.docstates
-.idea/
+*.DotSettings.user
+_ReSharper*/
 
-# Agent and tooling folders
+# Agent, AI and local tooling artifacts
 .agents/
 .taste-skill/
+.gemini/
+*.log
 
 # Node and package caches
 node_modules/
 npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
