@@ -1,666 +1,189 @@
 @page "/"
 @rendermode InteractiveServer
 @layout EmptyLayout
-@inject IJSRuntime JSRuntime
+@inject IJSRuntime JS
 @implements IAsyncDisposable
 
-<PageTitle>LOADOUT | Tactical Video Game Backlog Eliminator</PageTitle>
+<PageTitle>LOADOUT | Backlog Elimination Protocol</PageTitle>
 
-<HeadContent>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet" />
-</HeadContent>
-
-<div class="loadout-landing" data-loadout-page>
-    <nav class="loadout-nav" aria-label="Primary navigation" data-loadout-nav>
-        <a class="loadout-nav__brand" href="#hero-tactical" aria-label="LOADOUT home">
-            <span class="loadout-nav__signal" aria-hidden="true"></span>
-            <span>LOADOUT</span>
-        </a>
-
-        <div class="loadout-nav__links" aria-label="Landing page sections">
-            <a href="#hero-tactical">Chassis</a>
-            <a href="#chaos-assembly-pin">Convergence</a>
+<div class="loadout-landing" data-loadout-page data-interactive="@(interactive ? "true" : "false")">
+    <nav data-loadout-nav class="loadout-nav" aria-label="Primary navigation">
+        <a class="loadout-nav__brand" href="#hero-tactical" aria-label="LOADOUT home"><span class="loadout-nav__signal" aria-hidden="true"></span><span>LOADOUT</span></a>
+        <div class="loadout-nav__links">
+            <a href="#how-it-works">How it works</a>
             <a href="#telemetry-showcase-pin">Mechanics</a>
-            <a href="#live-hud">Live HUD</a>
-            <a href="#roulette-engine">Roulette</a>
-            <a href="#diagnostics">Telemetry</a>
-            <a href="#rules-engagement">Protocol</a>
+            <a href="#live-hud">The loadout</a>
+            <a href="#roulette-engine">Tonight's pick</a>
+            <a href="#the-games">The games</a>
+            <a href="#rules-engagement">The rules</a>
         </div>
-
         <div class="loadout-nav__actions">
             <a class="loadout-nav__login" href="/login">Log in</a>
-            <a class="button button--compact" href="/register">Enlist</a>
-            <button class="loadout-nav__menu-button"
-                    type="button"
-                    aria-expanded="@(isMenuOpen ? "true" : "false")"
-                    aria-controls="landing-menu"
-                    @onclick="ToggleMenu">
-                @(isMenuOpen ? "Close" : "Menu")
-            </button>
+            <a class="button button--compact" href="/register">Create account</a>
+            <button class="loadout-nav__menu-button" type="button" aria-expanded="@(menuOpen ? "true" : "false")" aria-controls="landing-menu" @onclick="() => menuOpen = !menuOpen">@(menuOpen ? "Close" : "Menu")</button>
         </div>
-
-        @if (isMenuOpen)
+        @if (menuOpen)
         {
             <div id="landing-menu" class="loadout-menu">
                 <div class="loadout-menu__links">
-                    <a href="#hero-tactical" @onclick="CloseMenu">Chassis</a>
-                    <a href="#chaos-assembly-pin" @onclick="CloseMenu">Convergence</a>
-                    <a href="#telemetry-showcase-pin" @onclick="CloseMenu">Mechanics</a>
-                    <a href="#live-hud" @onclick="CloseMenu">Live HUD</a>
-                    <a href="#roulette-engine" @onclick="CloseMenu">Roulette</a>
-                    <a href="#diagnostics" @onclick="CloseMenu">Telemetry</a>
-                    <a href="#rules-engagement" @onclick="CloseMenu">Protocol</a>
+                    <a href="#how-it-works" @onclick="CloseMenu">How it works</a>
+                    <a href="#live-hud" @onclick="CloseMenu">The loadout</a>
+                    <a href="#roulette-engine" @onclick="CloseMenu">Tonight's pick</a>
+                    <a href="#the-games" @onclick="CloseMenu">The games</a>
+                    <a href="#rules-engagement" @onclick="CloseMenu">The rules</a>
                 </div>
-                <div class="loadout-menu__account">
-                    <a href="/login">Log in</a>
-                    <a href="/register">Enlist</a>
-                </div>
+                <div class="loadout-menu__account"><a href="/login">Log in</a><a href="/register">Create account</a></div>
             </div>
         }
     </nav>
 
-    <main>
+    <main id="main-content">
         <section id="hero-tactical" class="hero section-anchor">
-            <div class="hero__word-clip" aria-hidden="true">
-                <div class="hero__word" data-hero-word>LOADOUT</div>
-            </div>
-
+            <div class="hero__word-clip" aria-hidden="true"><div class="hero__word" data-hero-word>LOADOUT</div></div>
             <div class="hero__grid">
                 <div class="hero__message">
-                    <div class="reveal-clip">
-                        <h1 data-hero-title><span>Backlog </span><span>Elimination Protocol.</span></h1>
-                    </div>
-                    <div class="hero__copy" data-hero-copy>
-                        <p>Lock three active titles into a focused rotation. Stop browsing your Steam library and finish what you start.</p>
-                        <a class="button" href="/register">Initialize your 3 slots</a>
-                    </div>
+                    <div class="reveal-clip"><h1 data-hero-title><span>Backlog </span><span>Elimination Protocol.</span></h1></div>
+                    <div class="hero__copy" data-hero-copy><p>Lock three active titles into a focused rotation. Spend less time choosing and more time playing what you start.</p><a class="button" href="/register">Build your 3 slots</a></div>
+                    <div class="hero__demo"><DemoEntry /></div>
                 </div>
-
-                <div class="hero__interface" data-hero-ui data-ui aria-label="Example active game loadout">
-                    <div class="hero__interface-head">
-                        <span>Active loadout</span>
-                        <span>3 of 3 slots</span>
-                    </div>
-
-                    <article class="hero-slot hero-slot--active">
-                        <img src="/images/cover_campaign.jpg" alt="Obsidian Frontier campaign cover" />
-                        <div>
-                            <span>Main campaign</span>
-                            <strong>Obsidian Frontier</strong>
-                            <small>18.4 hours logged · 42% complete</small>
-                        </div>
-                        <b>Active</b>
-                    </article>
-
-                    <article class="hero-slot">
-                        <img src="/images/cover_cleanser.jpg" alt="Osiris Protocol game cover" />
-                        <div>
-                            <span>Palate cleanser</span>
-                            <strong>Osiris Protocol</strong>
-                            <small>18-minute loop · 34 runs</small>
-                        </div>
-                        <b>Ready</b>
-                    </article>
-
-                    <article class="hero-slot">
-                        <img src="/images/cover_coop.jpg" alt="Strike Team Obsidian game cover" />
-                        <div>
-                            <span>Endless co-op</span>
-                            <strong>Strike Team: Obsidian</strong>
-                            <small>Squad online · Tier 4</small>
-                        </div>
-                        <b>Online</b>
-                    </article>
+                <div class="hero__interface" data-hero-ui aria-label="Example active game loadout">
+                    <div class="hero__interface-head"><span>Active loadout</span><span>3 slots · sample data</span></div>
+                    @for (var i = 0; i < samples.Length; i++)
+                    {
+                        var game = samples[i];
+                        <article class="hero-slot @(i == 0 ? "hero-slot--active" : "")">
+                            <img src="@game.Cover" alt="@game.AltText" />
+                            <div><span>@game.Role</span><strong>@game.Title</strong><small>@game.PrimaryValue · @game.SecondaryValue</small></div>
+                            <b>@(game.Status == GameStatus.Cleared ? "Completed" : "Active")</b>
+                        </article>
+                    }
+                    <p class="hero__sample-note">Your own account starts empty. Choose the games that belong in your rotation.</p>
                 </div>
             </div>
-
-            <a class="hero__scroll" href="#chaos-assembly-pin">See how the loadout converges</a>
+            <a class="hero__scroll" href="#how-it-works">See how your loadout comes together ↓</a>
         </section>
 
-        <section id="chaos-assembly-pin" class="story section-anchor section-dark" data-reveal-section>
+        <section id="how-it-works" data-reveal-section class="story section-anchor section-dark">
             <div class="story__grid page-frame">
-                <header class="story__heading">
-                    <h2 data-reveal-title>From 184 Scattered Backlog Titles to 3 Locked Slots</h2>
-                    <p data-reveal-copy>LOADOUT removes the library grid from the daily decision. Each active title has one role and one finish condition.</p>
-                </header>
-
+                <header class="story__heading"><h2 data-reveal-title>Too Many Choices.<br />Three Clear Slots.</h2><p data-reveal-copy>Give every active game a role. Keep the rest out of tonight's decision.</p></header>
                 <div class="story__steps">
                     <article class="story-step" data-story-step>
-                        <div class="story-step__visual story-step__visual--backlog" data-reveal-media>
-                            <span class="story-step__number">184</span>
-                            <img src="/images/cover_campaign.jpg" alt="Campaign game selected from the backlog" />
-                            <img src="/images/cover_cleanser.jpg" alt="Short-session game selected from the backlog" />
-                            <img src="/images/cover_coop.jpg" alt="Co-op game selected from the backlog" />
-                        </div>
-                        <div class="story-step__copy">
-                            <h3>Remove the wall of choices.</h3>
-                            <p>The rest of the library moves out of the daily decision. Nothing is deleted; it simply stops competing for tonight’s attention.</p>
-                        </div>
+                        <div data-reveal-media class="story-step__visual story-step__visual--backlog"><span class="story-step__number" aria-hidden="true">∞</span><img src="/images/call-of-duty.png" alt="Call of Duty" /><img src="/images/roblox.png" alt="Roblox" /><img src="/images/peak.png" alt="PEAK" /></div>
+                        <div class="story-step__copy" data-story-copy><h3>Remove the wall of choices.</h3><p>Your full collection doesn't need to compete for attention every night. Start with the three games you want to keep playing.</p></div>
                     </article>
-
                     <article class="story-step" data-story-step>
-                        <div class="story-step__visual story-step__visual--roles" data-reveal-media>
-                            <figure>
-                                <img src="/images/cover_campaign.jpg" alt="Main campaign slot" />
-                                <figcaption>Campaign</figcaption>
-                            </figure>
-                            <figure>
-                                <img src="/images/cover_cleanser.jpg" alt="Palate cleanser slot" />
-                                <figcaption>Cleanser</figcaption>
-                            </figure>
-                            <figure>
-                                <img src="/images/cover_coop.jpg" alt="Endless co-op slot" />
-                                <figcaption>Co-op</figcaption>
-                            </figure>
-                        </div>
-                        <div class="story-step__copy">
-                            <h3>Give every slot a job.</h3>
-                            <p>One campaign carries narrative momentum, one short-loop game fits low-energy sessions, and one co-op title stays ready for the squad.</p>
-                        </div>
+                        <div data-reveal-media class="story-step__visual story-step__visual--roles">@foreach (var game in samples) { <figure><img src="@game.Cover" alt="@game.AltText" /><figcaption>@game.Role</figcaption></figure> }</div>
+                        <div class="story-step__copy" data-story-copy><h3>Give every slot a job.</h3><p>One main campaign for focused sessions, one quick-play game for a short break, and one co-op or endless game for another round.</p></div>
                     </article>
-
                     <article class="story-step" data-story-step>
-                        <div class="story-step__visual story-step__visual--decision" data-reveal-media>
-                            <img src="/images/chassis_telemetry.jpg" alt="LOADOUT chassis telemetry interface" />
-                            <strong>One clear next move.</strong>
-                        </div>
-                        <div class="story-step__copy">
-                            <h3>Play before you browse.</h3>
-                            <p>Open LOADOUT, check the session recommendation, and launch the assigned slot. A new title enters only when a slot has genuinely cleared.</p>
-                        </div>
+                        <div data-reveal-media class="story-step__visual story-step__visual--decision"><img src="/images/rv-there-yet.png" alt="RV There Yet? road-trip game" /><strong>One clear next move.</strong></div>
+                        <div class="story-step__copy" data-story-copy><h3>Play before you browse.</h3><p>Set your available time and energy. LOADOUT recommends from the games already in your rotation.</p></div>
                     </article>
                 </div>
             </div>
         </section>
 
-        <section id="telemetry-showcase-pin" class="mechanics section-anchor section-light" data-reveal-section>
+        <section id="telemetry-showcase-pin" data-reveal-section class="mechanics section-anchor section-light">
             <div class="page-frame">
-                <header class="section-heading mechanics__heading">
-                    <h2 data-reveal-title>The 3 Core Tactical Mechanics</h2>
-                </header>
-
-                <div class="mechanics__columns" data-reveal-copy>
-                    <article>
-                        <h3>The Ironclad 3-Slot Lock</h3>
-                        <p>You cannot rotate a fourth game into the active loadout until one title reaches credits or is deliberately moved to the Dead Pile Archive.</p>
-                        <strong>Commitment replaces browsing.</strong>
-                    </article>
-                    <article>
-                        <h3>Brain-Battery Roulette Engine</h3>
-                        <p>Available minutes and current mental energy determine which of the three active roles fits the session you actually have.</p>
-                        <strong>Context replaces guesswork.</strong>
-                    </article>
-                    <article>
-                        <h3>The Cleared Vault Archive</h3>
-                        <p>Completed and abandoned games receive a final record. Clearing a title becomes visible progress and opens the next slot.</p>
-                        <strong>Closure replaces accumulation.</strong>
-                    </article>
+                <header class="section-heading mechanics__heading"><h2 data-reveal-title>The 3 Core Mechanics</h2></header>
+                <div class="mechanics__columns" data-reveal-media>
+                    <article><h3>The 3-Slot Lock</h3><p>A fourth game waits until you complete or deliberately drop one of your active games.</p><strong>A smaller rotation. More focus.</strong></article>
+                    <article><h3>A Pick for Tonight</h3><p>Your available minutes and energy help choose a game that fits the session you actually have.</p><strong>Your time sets the pace.</strong></article>
+                    <article><h3>Your Game History</h3><p>Keep a record of completed and dropped games, with your notes and completion rewards.</p><strong>Every ending makes room.</strong></article>
                 </div>
-
-                <div class="mechanics__statement" data-reveal-media>
-                    <span>Limit the work.</span>
-                    <span>Match the moment.</span>
-                    <span>Finish the game.</span>
-                </div>
+                <div class="mechanics__statement"><span>Limit the choices.</span><span>Match the moment.</span><span>Enjoy the game.</span></div>
             </div>
         </section>
 
-        <section id="live-hud" class="live-hud section-anchor section-dark" data-reveal-section>
+        <section id="live-hud" data-reveal-section class="live-hud section-anchor section-dark">
             <div class="page-frame">
-                <header class="section-heading section-heading--split">
-                    <h2 data-reveal-title>Active 3-Slot Combat Terminal</h2>
-                    <p data-reveal-copy>Select a slot, inspect its commitment, clear it, or record the cost of dropping it. This is the working product, not a decorative dashboard.</p>
-                </header>
-
-                <div class="terminal" data-ui data-reveal-media>
-                    <div class="terminal__tabs" role="tablist" aria-label="Active loadout slots">
-                        <button type="button"
-                                role="tab"
-                                aria-selected="@(activeSlot == 1 ? "true" : "false")"
-                                class="@(activeSlot == 1 ? "is-active" : string.Empty)"
-                                @onclick="() => SelectSlot(1)">
-                            <span>Main campaign</span>
-                            <strong>Obsidian Frontier</strong>
-                        </button>
-                        <button type="button"
-                                role="tab"
-                                aria-selected="@(activeSlot == 2 ? "true" : "false")"
-                                class="@(activeSlot == 2 ? "is-active" : string.Empty)"
-                                @onclick="() => SelectSlot(2)">
-                            <span>Palate cleanser</span>
-                            <strong>Osiris Protocol</strong>
-                        </button>
-                        <button type="button"
-                                role="tab"
-                                aria-selected="@(activeSlot == 3 ? "true" : "false")"
-                                class="@(activeSlot == 3 ? "is-active" : string.Empty)"
-                                @onclick="() => SelectSlot(3)">
-                            <span>Endless co-op</span>
-                            <strong>Strike Team: Obsidian</strong>
-                        </button>
+                <header class="section-heading section-heading--split"><h2 data-reveal-title>Your Active 3-Slot Loadout</h2><p data-reveal-copy>Select a game to inspect its role and example progress. This preview is separate from your account.</p></header>
+                <div class="terminal" data-reveal-media>
+                    <div class="terminal__tabs" role="group" aria-label="Preview slots">
+                        @for (var i = 0; i < samples.Length; i++)
+                        {
+                            var index = i; var game = samples[i];
+                            <button type="button" aria-pressed="@(activeSlot == i)" class="@(activeSlot == i ? "is-active" : "")" @onclick="() => activeSlot = index"><span>@game.Role</span><strong>@game.Title</strong></button>
+                        }
                     </div>
-
-                    <div class="terminal__toolbar">
-                        <span>@CurrentSlotRoleTag</span>
-                        <button type="button" @onclick="ToggleTelemetryView">
-                            @(isRawTelemetry ? "Show game view" : "Show raw log")
-                        </button>
+                    <div class="terminal__toolbar"><span>@SelectedGame.Role</span><span class="terminal__preview-note">Sample progress · try the full demo to save changes</span></div>
+                    <div class="terminal__body">
+                        <figure class="terminal__cover"><img src="@SelectedGame.Cover" alt="@SelectedGame.AltText" /></figure>
+                        <div class="terminal__details">
+                            <div class="terminal__title-row"><div><span>Selected game</span><h3>@SelectedGame.Title</h3></div><b class="status @(SelectedGame.Status == GameStatus.Cleared ? "status--cleared" : "")">@(SelectedGame.Status == GameStatus.Cleared ? "Completed" : "Active")</b></div>
+                            <dl class="terminal__metrics"><div><dt>@SelectedGame.PrimaryLabel</dt><dd>@SelectedGame.PrimaryValue</dd></div><div><dt>@SelectedGame.SecondaryLabel</dt><dd>@SelectedGame.SecondaryValue</dd></div><div><dt>Typical session</dt><dd>@SelectedGame.TargetSessionMinutes minutes</dd></div></dl>
+                            <p>@SelectedGame.Purpose</p>
+                            <div class="terminal__actions"><button type="button" class="terminal__primary" @onclick="ToggleCompleted">@(SelectedGame.Status == GameStatus.Cleared ? "Reopen sample slot" : "Try marking completed")</button><DemoEntry CssClass="button" Label="Open sample dashboard" /></div>
+                            <p class="hero__sample-note">Completing or dropping a game opens its slot. Your real progress lives in the dashboard.</p>
+                        </div>
                     </div>
-
-                    @if (!isRawTelemetry)
-                    {
-                        <div class="terminal__body">
-                            <figure class="terminal__cover">
-                                <img src="@CurrentCover" alt="Cover art for @CurrentGameTitle" />
-                            </figure>
-
-                            <div class="terminal__details">
-                                <div class="terminal__title-row">
-                                    <div>
-                                        <span>Selected target</span>
-                                        <h3>@CurrentGameTitle</h3>
-                                    </div>
-                                    <b class="@(IsCurrentSlotCleared ? "status status--cleared" : "status")">
-                                        @(IsCurrentSlotCleared ? "Cleared" : "Active")
-                                    </b>
-                                </div>
-
-                                <dl class="terminal__metrics">
-                                    <div>
-                                        <dt>Playtime</dt>
-                                        <dd>@CurrentPlaytime</dd>
-                                    </div>
-                                    <div>
-                                        <dt>Completion</dt>
-                                        <dd>@CurrentCompletion</dd>
-                                    </div>
-                                    <div>
-                                        <dt>Cognitive load</dt>
-                                        <dd>@CurrentCognitiveLoad</dd>
-                                    </div>
-                                </dl>
-
-                                <p>@CurrentDescription</p>
-
-                                <div class="terminal__actions">
-                                    <button type="button" class="terminal__primary" @onclick="MarkCurrentCleared">
-                                        @(IsCurrentSlotCleared ? "Reopen this slot" : "Mark slot cleared")
-                                    </button>
-                                    <button type="button" @onclick="TriggerHotSwapWarning">Hot-swap this game</button>
-                                </div>
-
-                                @if (showHotSwapAlert)
-                                {
-                                    <div class="terminal__warning" role="status">
-                                        <span>Dropping the active campaign requires a 10-hour lock or a formal Dead Pile note.</span>
-                                        <button type="button" @onclick="() => showHotSwapAlert = false">Dismiss</button>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="terminal__raw" aria-label="Raw loadout telemetry">
-                            <code>[0x0001] LOADOUT_CORE_INITIALIZED ... OK</code>
-                            <code>[0x0002] ACTIVE_SLOT_01: OBSIDIAN_FRONTIER / 18.4H</code>
-                            <code>[0x0003] ACTIVE_SLOT_02: OSIRIS_PROTOCOL / READY</code>
-                            <code>[0x0004] ACTIVE_SLOT_03: STRIKE_TEAM_OBSIDIAN / ONLINE</code>
-                            <code>[0x0005] CURRENT_SELECTED_INDEX: @activeSlot</code>
-                            <code>[0x0006] STATUS: @(IsCurrentSlotCleared ? "CLEARED" : "LOCKED")</code>
-                        </div>
-                    }
                 </div>
             </div>
         </section>
 
-        <section id="roulette-engine" class="roulette section-anchor" data-reveal-section>
+        <section id="roulette-engine" data-reveal-section class="roulette section-anchor">
             <div class="page-frame">
-                <header class="section-heading section-heading--split">
-                    <h2 data-reveal-title>Session-Time and Brain-Battery Roulette</h2>
-                    <p data-reveal-copy>Tell LOADOUT how much time and energy you have. It chooses from the three commitments already in play.</p>
-                </header>
-
+                <header class="section-heading section-heading--split"><h2 data-reveal-title>Session-Time &amp; Energy Roulette</h2><p data-reveal-copy>Tell LOADOUT how much time and energy you have. It recommends one of your active games using the same rules as the dashboard.</p></header>
                 <div class="roulette__grid" data-reveal-media>
                     <div class="roulette__controls">
-                        <div class="roulette__time">
-                            <label for="session-time">Available time</label>
-                            <output for="session-time">@sessionMinutes <span>minutes</span></output>
-                            <input id="session-time"
-                                   type="range"
-                                   min="15"
-                                   max="180"
-                                   step="15"
-                                   @bind="sessionMinutes"
-                                   @bind:event="oninput" />
-                            <div class="roulette__range-labels" aria-hidden="true">
-                                <span>Quick</span>
-                                <span>Normal</span>
-                                <span>Deep</span>
-                            </div>
-                        </div>
-
-                        <fieldset class="roulette__battery">
-                            <legend>Brain battery</legend>
-                            <div>
-                                <button type="button" class="@(batteryLevel == 20 ? "is-active" : string.Empty)" @onclick="() => SetBattery(20)">20% depleted</button>
-                                <button type="button" class="@(batteryLevel == 50 ? "is-active" : string.Empty)" @onclick="() => SetBattery(50)">50% nominal</button>
-                                <button type="button" class="@(batteryLevel == 80 ? "is-active" : string.Empty)" @onclick="() => SetBattery(80)">80% focused</button>
-                                <button type="button" class="@(batteryLevel == 100 ? "is-active" : string.Empty)" @onclick="() => SetBattery(100)">100% overclock</button>
-                            </div>
-                        </fieldset>
+                        <div class="roulette__time"><label for="session-time">Available time</label><output for="session-time">@sessionMinutes <span>minutes</span></output><input id="session-time" type="range" min="15" max="180" step="15" @bind="sessionMinutes" @bind:event="oninput" aria-valuetext="@SessionPicker.TimeLabel(sessionMinutes)" /><div class="roulette__range-labels" aria-hidden="true"><span>Quick</span><span>Normal</span><span>Deep</span></div></div>
+                        <fieldset class="roulette__battery"><legend>Energy</legend><div>@foreach (var value in new[] { 20, 50, 80, 100 }) { <button type="button" aria-pressed="@(energy == value)" class="@(energy == value ? "is-active" : "")" @onclick="() => energy = value">@value% @SessionPicker.EnergyLabel(value).ToLowerInvariant()</button> }</div></fieldset>
                     </div>
-
-                    <aside class="roulette__result" aria-live="polite" data-recommendation>
-                        <span>Your next session</span>
-                        <h3>@RecommendedSlotTitle</h3>
-                        <strong>@RecommendedGameTitle</strong>
-                        <p>@RecommendedRationale</p>
-                        <div class="roulette__result-foot">
-                            <span>@sessionMinutes minutes · @BatteryStatusText.ToLowerInvariant() energy</span>
-                            <a href="/register">Build this loadout</a>
-                        </div>
-                    </aside>
+                    <aside class="roulette__result" data-recommendation aria-live="polite" aria-atomic="true"><span>Your next session · sample data</span>@if (Recommendation.Game is { } pickedGame) { <img class="roulette__game-cover" src="@pickedGame.Cover" alt="@pickedGame.AltText" /><h3>@pickedGame.Role</h3><strong>@pickedGame.Title</strong><p>@Recommendation.Reason</p> } else { <h3>All slots completed.</h3><p>Reopen a sample slot above or build your own loadout.</p> }<div class="roulette__result-foot"><span>@sessionMinutes minutes · @SessionPicker.EnergyLabel(energy).ToLowerInvariant() energy</span><a href="/register">Build this loadout</a></div></aside>
                 </div>
             </div>
         </section>
 
-        <section id="diagnostics" class="diagnostics section-anchor section-light" data-reveal-section>
+        <section id="the-games" data-reveal-section class="diagnostics section-anchor section-light">
             <div class="page-frame">
-                <header class="section-heading section-heading--split">
-                    <h2 data-reveal-title>Steam Backlog Graveyard vs Loadout Protocol</h2>
-                    <p data-reveal-copy>Illustrative product model. Replace these example outcomes with measured product data before launch.</p>
-                </header>
-
-                <div class="diagnostics__table-wrap" data-reveal-media>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th scope="col">Operational metric</th>
-                                <th scope="col">Unrestricted backlog</th>
-                                <th scope="col">LOADOUT protocol</th>
-                                <th scope="col">Example change</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <th scope="row">Backlog completion rate</th>
-                                <td data-label="Unrestricted backlog">11.4%</td>
-                                <td data-label="LOADOUT protocol">68.2%</td>
-                                <td data-label="Example change">+56.8%</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Decision latency at launch</th>
-                                <td data-label="Unrestricted backlog">34.2 minutes</td>
-                                <td data-label="LOADOUT protocol">12 seconds</td>
-                                <td data-label="Example change">-99.4%</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Simultaneous campaigns</th>
-                                <td data-label="Unrestricted backlog">23 titles</td>
-                                <td data-label="LOADOUT protocol">1 campaign</td>
-                                <td data-label="Example change">WIP fixed</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Post-session regret</th>
-                                <td data-label="Unrestricted backlog">High</td>
-                                <td data-label="LOADOUT protocol">One recorded outcome</td>
-                                <td data-label="Example change">Reduced</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Annual spend left unplayed</th>
-                                <td data-label="Unrestricted backlog">$480 example</td>
-                                <td data-label="LOADOUT protocol">Buy on an open slot</td>
-                                <td data-label="Example change">Avoided</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <header class="section-heading section-heading--split"><h2 data-reveal-title>Your Games. Your Rotation.</h2><p data-reveal-copy>Five familiar games to try in the sample loadout. Still just three active slots at a time. All progress shown is example data.</p></header>
+                <div class="game-gallery" data-reveal-media>@foreach (var game in SampleGames.Catalog()) { <figure class="gallery-game"><div class="gallery-game__art"><img src="@game.Cover" alt="@game.AltText" loading="lazy" /></div><figcaption><strong>@game.Title</strong><span>@game.Role</span></figcaption></figure> }</div>
             </div>
         </section>
 
-        <section id="rules-engagement" class="rules section-anchor section-dark" data-reveal-section>
+        <section id="rules-engagement" data-reveal-section class="rules section-anchor section-dark">
             <div class="page-frame rules__grid">
-                <header class="rules__heading">
-                    <span aria-hidden="true">RULES</span>
-                    <h2 data-reveal-title>The Rules of Engagement</h2>
-                    <p data-reveal-copy>Three constraints keep the rotation honest. They are intentionally harder to ignore than another recommendation list.</p>
-                </header>
-
+                <header class="rules__heading"><span aria-hidden="true">RULES</span><h2 data-reveal-title>The Rules of Engagement</h2><p data-reveal-copy>Simple limits that keep the next session clear.</p></header>
                 <div class="rules__list" data-reveal-media>
-                    <details open>
-                        <summary>The 10-Hour Zero-Swap Rule <span>Commitment</span></summary>
-                        <div>
-                            <p>When a game enters the main campaign slot, it cannot be swapped without penalty until you have logged at least 10 verified hours or recorded it as definitively abandoned with an autopsy note.</p>
-                            <strong>Consequence: 48-hour Steam Store quarantine.</strong>
-                        </div>
-                    </details>
-                    <details>
-                        <summary>The 30-Minute Loop Ceiling <span>Low friction</span></summary>
-                        <div>
-                            <p>The palate-cleanser slot is reserved for games with loops under 30 minutes. Roguelites, fighting games, and arcade titles qualify. RPG side quests and live-service treadmills do not.</p>
-                            <strong>Purpose: a reboot with no narrative overhead.</strong>
-                        </div>
-                    </details>
-                    <details>
-                        <summary>Credits Roll or Burial <span>Closure</span></summary>
-                        <div>
-                            <p>To claim a cleared slot, reach the credits or the natural conclusion. Partial playthroughs do not count. Every resolved title enters the permanent Vault Ledger.</p>
-                            <strong>Benefit: the next active slot opens with intent.</strong>
-                        </div>
-                    </details>
+                    <details open><summary>Three active games <span>Focus</span></summary><div><p>Keep one game in each role. You can start with just one; you don't need to fill all three slots.</p><strong>No fourth slot competing for tonight.</strong></div></details>
+                    <details><summary>Match your session <span>Fit</span></summary><div><p>Set the time and energy you have. The recommendation helps you choose, and you decide what to play.</p><strong>Your choice stays until you change it.</strong></div></details>
+                    <details><summary>Complete it or move on <span>Closure</span></summary><div><p>Mark a game completed or deliberately drop it before replacing it. Either action saves it to History and opens the slot.</p><strong>Completed games earn 500 XP. Dropping has no penalty.</strong></div></details>
                 </div>
             </div>
         </section>
 
-        <section class="final-cta" data-reveal-section>
+        <section class="final-cta" data-reveal-section aria-labelledby="closing-title">
             <div class="page-frame final-cta__inner">
-                <h2 data-reveal-title>Terminate Your Backlog.</h2>
-                <div class="final-cta__bottom" data-reveal-copy>
-                    <p>Build a focused three-game rotation and make tonight’s choice before the library grid makes it for you.</p>
-                    <a class="button" href="/register">Initialize LOADOUT</a>
-                </div>
+                <div class="final-cta__heading"><span class="eyebrow">Ready when you are</span><h2 id="closing-title" data-reveal-title>Take Back<br />Your Game Night.</h2></div>
+                <div class="final-cta__bottom" data-reveal-copy><p>Three games. A session that fits.<br />Start building your own rotation.</p><a class="button" href="/register">Create your loadout <span aria-hidden="true">↗</span></a></div>
             </div>
         </section>
     </main>
-
-    <footer class="loadout-footer">
-        <div class="page-frame loadout-footer__inner">
-            <div class="loadout-footer__columns">
-                <div>
-                    <strong>LOADOUT</strong>
-                    <span>Three active games.<br />One clear next move.</span>
-                </div>
-                <div>
-                    <strong>Navigate</strong>
-                    <a href="#telemetry-showcase-pin">Mechanics</a>
-                    <a href="#roulette-engine">Roulette</a>
-                    <a href="#rules-engagement">Protocol</a>
-                </div>
-                <div>
-                    <strong>Account</strong>
-                    <a href="/register">Enlist</a>
-                    <a href="/login">Log in</a>
-                    <a href="/dashboard">Dashboard</a>
-                </div>
-                <div>
-                    <strong>Return</strong>
-                    <a href="#hero-tactical">Back to top</a>
-                    <span>© 2026 LOADOUT</span>
-                </div>
-            </div>
-            <div class="loadout-footer__word" aria-hidden="true">LOADOUT</div>
-        </div>
-    </footer>
+    <footer class="loadout-footer"><div class="page-frame loadout-footer__inner"><div class="loadout-footer__columns"><div><strong>LOADOUT</strong><span>A little focus goes a long way.</span></div><div><strong>Your rotation</strong><a href="#how-it-works">How it works</a><a href="#the-games">The games</a></div><div><strong>Your account</strong><a href="/login">Log in</a><a href="/register">Create account</a></div><div><strong>Midterm project</strong><span>Temporary demo data</span><span>© 2026 LOADOUT</span></div></div></div></footer>
 </div>
 
 @code {
-    private int activeSlot = 1;
-    private bool slot1Cleared;
-    private bool slot2Cleared;
-    private bool slot3Cleared;
-    private bool showHotSwapAlert;
-    private bool isRawTelemetry;
-    private bool isMenuOpen;
-    private int sessionMinutes = 45;
-    private int batteryLevel = 80;
-
+    private readonly GameItem[] samples = SampleGames.Create();
+    private bool interactive, menuOpen, motionStarted;
+    private int activeSlot, sessionMinutes = 45, energy = 35;
+    private GameItem SelectedGame => samples[activeSlot];
+    private RouletteResult Recommendation => RecommendationEvaluator.Evaluate(samples, sessionMinutes, energy);
+    private void CloseMenu() => menuOpen = false;
+    private void ToggleCompleted() => SelectedGame.Status = SelectedGame.Status == GameStatus.Active ? GameStatus.Cleared : GameStatus.Active;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            try
-            {
-                await JSRuntime.InvokeVoidAsync("loadoutEngine.init");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("GSAP Init Exception: " + ex.Message);
-            }
-        }
+        if (!firstRender) return;
+        try { await JS.InvokeVoidAsync("loadoutEngine.init"); motionStarted = true; }
+        catch (JSException) { /* Content stays visible if the motion runtime cannot load. */ }
+        interactive = true;
+        StateHasChanged();
     }
 
     public async ValueTask DisposeAsync()
     {
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("loadoutEngine.cleanup");
-        }
-        catch
-        {
-            // The circuit may already be disconnected during navigation.
-        }
+        if (!motionStarted) return;
+        try { await JS.InvokeVoidAsync("loadoutEngine.cleanup"); }
+        catch (JSDisconnectedException) { }
+        catch (TaskCanceledException) { }
     }
-
-    private void ToggleMenu() => isMenuOpen = !isMenuOpen;
-
-    private void CloseMenu() => isMenuOpen = false;
-
-    private void SelectSlot(int slot)
-    {
-        activeSlot = slot;
-        showHotSwapAlert = false;
-    }
-
-    private void ToggleTelemetryView() => isRawTelemetry = !isRawTelemetry;
-
-    private void MarkCurrentCleared()
-    {
-        if (activeSlot == 1) slot1Cleared = !slot1Cleared;
-        else if (activeSlot == 2) slot2Cleared = !slot2Cleared;
-        else if (activeSlot == 3) slot3Cleared = !slot3Cleared;
-    }
-
-    private void TriggerHotSwapWarning() => showHotSwapAlert = true;
-
-    private void SetBattery(int level) => batteryLevel = level;
-
-    private bool IsCurrentSlotCleared =>
-        activeSlot switch
-        {
-            1 => slot1Cleared,
-            2 => slot2Cleared,
-            3 => slot3Cleared,
-            _ => false
-        };
-
-    private string CurrentCover =>
-        activeSlot switch
-        {
-            1 => "/images/cover_campaign.jpg",
-            2 => "/images/cover_cleanser.jpg",
-            3 => "/images/cover_coop.jpg",
-            _ => "/images/cover_campaign.jpg"
-        };
-
-    private string CurrentSlotRoleTag =>
-        activeSlot switch
-        {
-            1 => "Main campaign",
-            2 => "Palate cleanser",
-            3 => "Endless co-op",
-            _ => "Main campaign"
-        };
-
-    private string CurrentGameTitle =>
-        activeSlot switch
-        {
-            1 => "Obsidian Frontier",
-            2 => "Osiris Protocol",
-            3 => "Strike Team: Obsidian",
-            _ => "Obsidian Frontier"
-        };
-
-    private string CurrentPlaytime =>
-        activeSlot switch
-        {
-            1 => "18.4 hours",
-            2 => "8.2 hours",
-            3 => "34.0 hours",
-            _ => "0 hours"
-        };
-
-    private string CurrentCompletion =>
-        activeSlot switch
-        {
-            1 => "42% · 24 hours left",
-            2 => "34 runs · 18-minute loop",
-            3 => "Tier 4 · weekly cap",
-            _ => "0%"
-        };
-
-    private string CurrentCognitiveLoad =>
-        activeSlot switch
-        {
-            1 => "High · deep narrative",
-            2 => "Low · arcade flow",
-            3 => "Moderate · tactical squad",
-            _ => "Normal"
-        };
-
-    private string CurrentDescription =>
-        activeSlot switch
-        {
-            1 => "A strict narrative progression focus. The current checkpoint demands a longer, high-attention session and should wait when energy is low.",
-            2 => "A sub-20-minute run with no narrative baggage. Use it to clear a mental block or fill a short window between commitments.",
-            3 => "A multiplayer extraction game for the online squad. Two short drops create progress without a campaign thread to remember next time.",
-            _ => string.Empty
-        };
-
-    private string BatteryStatusText =>
-        batteryLevel switch
-        {
-            <= 25 => "DEPLETED",
-            <= 55 => "NOMINAL",
-            <= 85 => "FOCUSED",
-            _ => "OVERCLOCKED"
-        };
-
-    private string RecommendedSlotTitle =>
-        (sessionMinutes, batteryLevel) switch
-        {
-            (<= 30, _) => "Palate Cleanser",
-            (_, <= 30) => "Palate Cleanser",
-            (> 60, >= 75) => "Main Campaign",
-            _ => "Endless Co-op"
-        };
-
-    private string RecommendedGameTitle =>
-        RecommendedSlotTitle switch
-        {
-            "Main Campaign" => "Obsidian Frontier",
-            "Palate Cleanser" => "Osiris Protocol",
-            _ => "Strike Team: Obsidian"
-        };
-
-    private string RecommendedRationale =>
-        (sessionMinutes, batteryLevel) switch
-        {
-            (<= 30, _) => "The available window is too short for a campaign checkpoint. Run the low-friction loop in the cleanser slot.",
-            (_, <= 30) => "Energy is low. Avoid high-complexity narrative or boss mechanics and choose the slot with the smallest restart cost.",
-            (> 60, >= 75) => "You have enough time and focus to protect narrative momentum. Advance the main campaign while the conditions are right.",
-            _ => "The session has enough room for tactical squad play without committing to a long narrative stretch."
-        };
 }

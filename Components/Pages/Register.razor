@@ -1,97 +1,19 @@
 @page "/register"
-@rendermode InteractiveServer
 @layout EmptyLayout
-@using System.ComponentModel.DataAnnotations
-@using MidtermExam.Models
-@using MidtermExam.Services
-@inject NavigationManager Navigation
-@inject IAuthService AuthService
-
-<PageTitle>LOADOUT | Create an account</PageTitle>
-
-<HeadContent>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet" />
-</HeadContent>
-
-<AuthShell Title="Build your three-slot loadout"
-           Description="Create your profile now. You can connect Steam or another game library after setup."
-           AlternatePrompt="Already have a loadout?"
-           AlternateHref="/login"
-           AlternateLabel="Log in">
-    <EditForm Model="registerModel" OnValidSubmit="HandleRegistration" FormName="register" class="auth-form">
-        <DataAnnotationsValidator />
-
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div style="background: rgba(225, 29, 72, 0.15); border: 1px solid #e11d48; color: #fca5a5; padding: 10px 14px; font-size: 13px; margin-bottom: 16px;">
-                @errorMessage
-            </div>
-        }
-
-        <div class="auth-form__field">
-            <label for="register-name">Display name</label>
-            <InputText id="register-name"
-                       @bind-Value="registerModel.DisplayName"
-                       autocomplete="nickname"
-                       placeholder="What should we call you?" />
-            <ValidationMessage For="@(() => registerModel.DisplayName)" />
-        </div>
-
-        <div class="auth-form__field">
-            <label for="register-email">Email</label>
-            <InputText id="register-email"
-                       type="email"
-                       @bind-Value="registerModel.Email"
-                       autocomplete="email"
-                       inputmode="email"
-                       placeholder="player@example.com" />
-            <ValidationMessage For="@(() => registerModel.Email)" />
-        </div>
-
-        <div class="auth-form__field">
-            <label for="register-password">Password</label>
-            <InputText id="register-password"
-                       type="password"
-                       @bind-Value="registerModel.Password"
-                       autocomplete="new-password"
-                       placeholder="At least 6 characters" />
-            <ValidationMessage For="@(() => registerModel.Password)" />
-        </div>
-
-        <div class="auth-form__field">
-            <label for="register-confirm">Confirm password</label>
-            <InputText id="register-confirm"
-                       type="password"
-                       @bind-Value="registerModel.ConfirmPassword"
-                       autocomplete="new-password"
-                       placeholder="Enter the same password again" />
-            <ValidationMessage For="@(() => registerModel.ConfirmPassword)" />
-        </div>
-
-        <button class="auth-form__submit" type="submit">
-            <span>Create my loadout</span>
-            <span aria-hidden="true">Continue →</span>
-        </button>
-    </EditForm>
+<PageTitle>Create account · LOADOUT</PageTitle>
+<AuthShell Title="Create your account" Description="Next, add up to three games to your active rotation." AlternatePrompt="Already have an account?" AlternateHref="/login" AlternateLabel="Log in">
+    <form class="auth-form" method="post" action="/auth/register" data-enhance="false" data-password-match>
+        <AntiforgeryToken />
+        @if (Error == "duplicate") { <p class="form-error" role="alert">An account with this email already exists. <a href="/login">Log in instead.</a></p> }
+        <div class="field"><label for="register-name">Display name</label><input id="register-name" name="DisplayName" autocomplete="nickname" placeholder="What should we call you?" value="@DisplayName" minlength="2" maxlength="30" required aria-describedby="name-error" /><span id="name-error" class="field-error">@(Error == "DisplayName" ? "Use between 2 and 30 characters." : "")</span></div>
+        <div class="field"><label for="register-email">Email</label><input id="register-email" name="Email" type="email" autocomplete="email" placeholder="you@example.com" value="@Email" maxlength="254" required aria-describedby="email-error" /><span id="email-error" class="field-error">@(Error == "Email" ? "Enter a valid email address." : "")</span></div>
+        <div class="field"><label for="register-password">Password</label><div class="password-wrap"><input id="register-password" name="Password" type="password" autocomplete="new-password" placeholder="Create a password" minlength="6" maxlength="128" required aria-describedby="password-hint password-error" /><button type="button" class="password-toggle" data-password-toggle="register-password" aria-label="Show password" aria-pressed="false">Show</button></div><small id="password-hint">Use 6–128 characters.</small><span id="password-error" class="field-error">@(Error == "Password" ? "Use between 6 and 128 characters." : "")</span></div>
+        <div class="field"><label for="register-confirm">Confirm password</label><div class="password-wrap"><input id="register-confirm" name="ConfirmPassword" type="password" autocomplete="new-password" placeholder="Enter your password again" maxlength="128" required aria-describedby="confirm-error" /><button type="button" class="password-toggle" data-password-toggle="register-confirm" aria-label="Show password confirmation" aria-pressed="false">Show</button></div><span id="confirm-error" class="field-error">@(Error == "ConfirmPassword" ? "Passwords do not match." : "")</span></div>
+        <button class="button" type="submit" data-pending="Creating account…">Create account <span aria-hidden="true">→</span></button>
+    </form>
 </AuthShell>
-
 @code {
-    private readonly RegisterModel registerModel = new();
-    private string? errorMessage;
-
-    private void HandleRegistration()
-    {
-        errorMessage = null;
-        if (AuthService.Register(registerModel, out var error))
-        {
-            Navigation.NavigateTo("/dashboard");
-        }
-        else
-        {
-            errorMessage = error;
-        }
-    }
+    [SupplyParameterFromQuery(Name="error")] public string? Error { get; set; }
+    [SupplyParameterFromQuery(Name="email")] public string? Email { get; set; }
+    [SupplyParameterFromQuery(Name="name")] public string? DisplayName { get; set; }
 }
-

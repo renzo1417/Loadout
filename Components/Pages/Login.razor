@@ -1,76 +1,26 @@
 @page "/login"
-@rendermode InteractiveServer
 @layout EmptyLayout
-@using System.ComponentModel.DataAnnotations
-@using MidtermExam.Models
-@using MidtermExam.Services
-@inject NavigationManager Navigation
-@inject IAuthService AuthService
-
-<PageTitle>LOADOUT | Log in</PageTitle>
-
-<HeadContent>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet" />
-</HeadContent>
-
-<AuthShell Title="Resume your loadout"
-           Description="Return to your three active games and get one clear recommendation for tonight."
-           AlternatePrompt="New to LOADOUT?"
-           AlternateHref="/register"
-           AlternateLabel="Create an account">
-    <EditForm Model="loginModel" OnValidSubmit="HandleLogin" FormName="login" class="auth-form">
-        <DataAnnotationsValidator />
-
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div style="background: rgba(225, 29, 72, 0.15); border: 1px solid #e11d48; color: #fca5a5; padding: 10px 14px; font-size: 13px; margin-bottom: 16px;">
-                @errorMessage
-            </div>
-        }
-
-        <div class="auth-form__field">
-            <label for="login-identity">Email or call-sign</label>
-            <InputText id="login-identity"
-                       @bind-Value="loginModel.Identity"
-                       autocomplete="username"
-                       placeholder="player@example.com or GHOST-01" />
-            <ValidationMessage For="@(() => loginModel.Identity)" />
+<PageTitle>Log in · LOADOUT</PageTitle>
+<AuthShell Title="Log in to LOADOUT" Description="Pick up your rotation and find a game for tonight." AlternatePrompt="New to LOADOUT?" AlternateHref="/register" AlternateLabel="Create account">
+    <form class="auth-form" method="post" action="/auth/login" data-enhance="false">
+        <AntiforgeryToken />
+        @if (Error == "credentials") { <p class="form-error" role="alert">Email or password is incorrect. Try again, or create an account.</p> }
+        @if (Notice == "loggedout") { <p class="notice" role="status">You're logged out.</p> }
+        <div class="field">
+            <label for="login-email">Email</label>
+            <input id="login-email" name="Email" type="email" autocomplete="username" placeholder="you@example.com" value="@Email" required maxlength="254" aria-invalid="@(Error == "Email")" aria-describedby="login-email-error" />
+            <span id="login-email-error" class="field-error">@(Error == "Email" ? "Enter a valid email address." : "")</span>
         </div>
-
-        <div class="auth-form__field">
+        <div class="field">
             <label for="login-password">Password</label>
-            <InputText id="login-password"
-                       type="password"
-                       @bind-Value="loginModel.Password"
-                       autocomplete="current-password"
-                       placeholder="Enter your password" />
-            <ValidationMessage For="@(() => loginModel.Password)" />
+            <div class="password-wrap"><input id="login-password" name="Password" type="password" autocomplete="current-password" placeholder="Your password" required maxlength="128" aria-describedby="login-password-error" /><button type="button" class="password-toggle" data-password-toggle="login-password" aria-label="Show password" aria-pressed="false">Show</button></div>
+            <span id="login-password-error" class="field-error">@(Error == "Password" ? "Enter your password." : "")</span>
         </div>
-
-        <button class="auth-form__submit" type="submit">
-            <span>Enter LOADOUT</span>
-            <span aria-hidden="true">Continue →</span>
-        </button>
-    </EditForm>
+        <button class="button" type="submit" data-pending="Logging in…">Log in <span aria-hidden="true">→</span></button>
+    </form>
 </AuthShell>
-
 @code {
-    private readonly LoginModel loginModel = new();
-    private string? errorMessage;
-
-    private void HandleLogin()
-    {
-        errorMessage = null;
-        if (AuthService.Login(loginModel.Identity, loginModel.Password, out var error))
-        {
-            Navigation.NavigateTo("/dashboard");
-        }
-        else
-        {
-            errorMessage = error;
-        }
-    }
+    [SupplyParameterFromQuery(Name="error")] public string? Error { get; set; }
+    [SupplyParameterFromQuery(Name="email")] public string? Email { get; set; }
+    [SupplyParameterFromQuery(Name="notice")] public string? Notice { get; set; }
 }
-

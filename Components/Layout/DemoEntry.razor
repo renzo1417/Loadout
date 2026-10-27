@@ -1,0 +1,8 @@
+<form method="post" action="/auth/demo" data-enhance="false" class="demo-entry">
+    <AntiforgeryToken />
+    <button type="submit" class="@CssClass" data-pending="Opening demo…">@Label <span aria-hidden="true">↗</span></button>
+</form>
+@code {
+    [Parameter] public string CssClass { get; set; } = "text-button";
+    [Parameter] public string Label { get; set; } = "Try sample demo";
+}

@@ -1,0 +1,38 @@
+<section class="session-panel" aria-labelledby="session-title">
+    <div class="session-inputs">
+        <span class="eyebrow">Make time for a good game</span>
+        <h2 id="session-title">What fits tonight?</h2>
+        <p>A game for the time and energy you have.</p>
+        <div class="session-range"><div><label for="session-minutes">Time available</label><output for="session-minutes">@TimeLabel(Minutes)</output></div><input id="session-minutes" type="range" min="15" max="180" step="15" value="@Minutes" @oninput="ChangeMinutes" aria-valuetext="@TimeLabel(Minutes)" /><div class="range-ends"><span>15 minutes</span><span>3 hours</span></div></div>
+        <div class="session-range"><div><label for="session-energy">Energy</label><output for="session-energy">@EnergyLabel(Energy)</output></div><input id="session-energy" type="range" min="0" max="100" step="5" value="@Energy" @oninput="ChangeEnergy" aria-valuetext="@EnergyLabel(Energy)" /><div class="range-ends"><span>Running low</span><span>Ready to focus</span></div></div>
+    </div>
+    <div class="session-result" aria-live="polite" aria-atomic="true">
+        @if (Result.Game is { } game)
+        {
+            <GameCover Source="@game.Cover" Alt="@game.AltText" CssClass="session-cover" />
+            <div class="session-result-shade"></div>
+            <div class="session-result-content">
+                <span class="recommendation-label"><span aria-hidden="true">●</span> @(Preview ? "Sample recommendation" : "Recommended")</span>
+                <span class="session-role">@game.Role</span>
+                <h3>@game.Title</h3><p>@Result.Reason</p>
+                @if (Preview) { <a href="/register" class="button">Build your own loadout <span aria-hidden="true">→</span></a> }
+                else { <button class="button" type="button" @onclick="() => OnChoose.InvokeAsync(Result.RecommendedIndex)" disabled="@(ChosenIndex == Result.RecommendedIndex)">@(ChosenIndex == Result.RecommendedIndex ? "✓ Chosen tonight" : "Choose for tonight")</button> }
+            </div>
+        }
+    </div>
+</section>
+@code {
+    [Parameter] public IReadOnlyList<GameItem?> Games { get; set; } = Array.Empty<GameItem?>();
+    [Parameter] public int Minutes { get; set; } = 45;
+    [Parameter] public int Energy { get; set; } = 35;
+    [Parameter] public EventCallback<int> MinutesChanged { get; set; }
+    [Parameter] public EventCallback<int> EnergyChanged { get; set; }
+    [Parameter] public EventCallback<int> OnChoose { get; set; }
+    [Parameter] public int? ChosenIndex { get; set; }
+    [Parameter] public bool Preview { get; set; }
+    private RouletteResult Result => RecommendationEvaluator.Evaluate(Games, Minutes, Energy);
+    private Task ChangeMinutes(ChangeEventArgs e) => MinutesChanged.InvokeAsync(int.Parse(e.Value!.ToString()!));
+    private Task ChangeEnergy(ChangeEventArgs e) => EnergyChanged.InvokeAsync(int.Parse(e.Value!.ToString()!));
+    public static string TimeLabel(int value) => value < 60 ? $"{value} minutes" : value % 60 == 0 ? $"{value / 60} hour{(value > 60 ? "s" : "")}" : $"{value / 60} hr {value % 60} min";
+    public static string EnergyLabel(int value) => value <= 40 ? "Low" : value < 65 ? "Steady" : "Focused";
+}

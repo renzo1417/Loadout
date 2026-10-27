@@ -1,0 +1,6 @@
+<img src="@(string.IsNullOrWhiteSpace(Source) ? "/images/game-placeholder.svg" : Source)" alt="@Alt" class="@CssClass" data-cover-fallback="/images/game-placeholder.svg" />
+@code {
+    [Parameter] public string? Source { get; set; }
+    [Parameter] public string Alt { get; set; } = "Game cover";
+    [Parameter] public string? CssClass { get; set; }
+}

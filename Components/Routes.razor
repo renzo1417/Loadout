@@ -1,6 +1,10 @@
-﻿<Router AppAssembly="typeof(Program).Assembly">
+@using Microsoft.AspNetCore.Components.Authorization
+<Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+            <NotAuthorized><RedirectToLogin /></NotAuthorized>
+        </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
+    <NotFound><LayoutView Layout="typeof(Layout.EmptyLayout)"><main id="main-content" class="not-found"><a class="brand" href="/">LOADOUT</a><h1>This page isn't in your loadout.</h1><a class="button" href="/">Back to home</a></main></LayoutView></NotFound>
 </Router>

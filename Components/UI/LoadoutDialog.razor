@@ -1,0 +1,28 @@
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+<dialog class="loadout-dialog" @ref="element" aria-labelledby="dialog-title">
+    <header class="dialog-header"><div><span class="eyebrow">@Eyebrow</span><h2 id="dialog-title">@Title</h2></div><button class="dialog-close" type="button" aria-label="Close dialog" @onclick="OnClose">×</button></header>
+    <div class="dialog-body">@ChildContent</div>
+    @if (Footer != null) { <footer class="dialog-footer">@Footer</footer> }
+</dialog>
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Eyebrow { get; set; } = "Your loadout";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    private ElementReference element;
+    private DotNetObjectReference<LoadoutDialog>? reference;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        reference = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("loadoutUI.openDialog", element, reference);
+    }
+    [JSInvokable] public Task CloseFromBrowser() => OnClose.InvokeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        try { await JS.InvokeVoidAsync("loadoutUI.closeDialog", element); } catch (JSDisconnectedException) { }
+        reference?.Dispose();
+    }
+}

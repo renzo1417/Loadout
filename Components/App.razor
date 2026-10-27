@@ -1,94 +1,26 @@
 <!DOCTYPE html>
-<html lang="en" class="dark scroll-smooth">
-
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    <title>LOADOUT | Tactical Backlog Eliminator</title>
-    <!-- Modern Typography: Plus Jakarta Sans and JetBrains Mono -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Tailwind CSS with Tactical Surface Theme Lock -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        carbon: '#09090B',
-                        slateSurface: '#121215',
-                        slateElevated: '#18181D',
-                        hairline: '#27272A',
-                        boneWhite: '#FAFAFA',
-                        zincMeta: '#A1A1AA',
-                        crimsonSignal: '#E11D48',
-                        emeraldStatus: '#10B981'
-                    },
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
-                        mono: ['"JetBrains Mono"', 'monospace']
-                    }
-                }
-            }
-        }
-    </script>
-
-    <!-- GSAP 3 and ScrollTrigger Core -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-
+    <meta name="description" content="Keep three games in rotation. Choose what to play based on your time and energy, and finish what you start." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="MidtermExam.styles.css" />
-    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <HeadOutlet />
-    <style>
-        /* Tactical Hairlines and Reset */
-        body {
-            background-color: #09090B;
-            color: #FAFAFA;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            overflow-x: hidden;
-            margin: 0;
-            padding: 0;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* Monospace Tabular Figures */
-        .tabular-mono {
-            font-family: 'JetBrains Mono', monospace;
-            font-variant-numeric: tabular-nums;
-        }
-
-        /* 1px Structural Precision Hairlines */
-        .hairline-border {
-            border: 1px solid #27272A;
-        }
-
-        /* Custom Tactical Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #09090B;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #27272A;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #E11D48;
-        }
-    </style>
 </head>
-
-<body class="bg-carbon text-boneWhite selection:bg-crimsonSignal selection:text-boneWhite">
+<body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <Routes />
-    <script src="_framework/blazor.web.js"></script>
+    <div id="blazor-error-ui" role="alert">Connection interrupted. <a href="">Reload to reconnect</a></div>
+    <script src="js/loadout-ui.js"></script>
+    <script src="vendor/gsap/gsap.min.js"></script>
+    <script src="vendor/gsap/ScrollTrigger.min.js"></script>
     <script src="js/loadout-gsap.js"></script>
+    <script src="_framework/blazor.web.js"></script>
 </body>
-
 </html>
