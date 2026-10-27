@@ -6,7 +6,7 @@ public sealed class GameItem
     public SlotType Slot { get; set; }
     public string Role => Slot.ToDisplayName();
     public string Title { get; set; } = string.Empty;
-    public string Cover { get; set; } = "/images/cover_campaign.jpg";
+    public string Cover { get; set; } = "/images/game-placeholder.svg";
     public string AltText { get; set; } = "Game cover";
     public string Purpose { get; set; } = string.Empty;
     public string PrimaryLabel { get; set; } = "Progress";

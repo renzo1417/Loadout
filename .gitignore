@@ -6,6 +6,15 @@
 out/
 dist/
 
+# Test and coverage outputs
+[Tt]est[Rr]esults/
+test-results/
+playwright-report/
+blob-report/
+*.coverage
+*.coveragexml
+coverage/
+
 # Visual Studio / Visual Studio Code / Rider
 .vs/
 .vscode/
@@ -17,6 +26,21 @@ dist/
 *.sln.docstates
 *.DotSettings.user
 _ReSharper*/
+
+# User secrets and local environment overrides
+appsettings*.local.json
+secrets.json
+.env
+.env.local
+.env.*.local
+*.env
+
+# Publish and packaging outputs
+[Pp]ublish/
+*.publishsettings
+*.pubxml.user
+*.nupkg
+*.snupkg
 
 # Agent, AI and local tooling artifacts
 .agents/
@@ -30,6 +54,14 @@ npm-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Crash dumps and temporary editor backups
+*.dmp
+*.dump
+*.crash
+*.swp
+*~
+*.bak
+
 # OS generated files
 .DS_Store
 .DS_Store?
@@ -39,3 +71,7 @@ pnpm-debug.log*
 ehthumbs.db
 Thumbs.db
 desktop.ini
+
+# Local browser captures and test artifacts
+.artifacts/
+
